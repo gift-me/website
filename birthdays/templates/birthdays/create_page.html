@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Create Birthday Page | GiftMe{% endblock %}
+{% block content %}
+<section class="form-wrap">
+    <div class="card form-card">
+        <h1>Create your birthday experience</h1>
+        <p>We auto-generate your virtual gift menu, progress tracker, gift wall, and shareable QR link.</p>
+        <form method="post" class="form-grid">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="field {% if field.name == 'bio' %}field-full{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                {% for error in field.errors %}<small class="error">{{ error }}</small>{% endfor %}
+            </div>
+            {% endfor %}
+            <div class="field field-full">
+                <button class="btn btn-primary" type="submit"><i class="fa-solid fa-sparkles"></i> Launch Birthday Page</button>
+            </div>
+        </form>
+    </div>
+    <aside class="card side-note">
+        <h3>Included by default</h3>
+        <ul class="feature-list">
+            <li><i class="fa-solid fa-cake-candles"></i> Birthday Cake - KES 100</li>
+            <li><i class="fa-solid fa-pizza-slice"></i> Pizza - KES 300</li>
+            <li><i class="fa-solid fa-plane-departure"></i> Vacation Fund - KES 1,000</li>
+            <li><i class="fa-solid fa-gift"></i> Surprise Gift - Any Amount</li>
+        </ul>
+        <p class="muted">Payment integration is intentionally deferred for now. This MVP focuses on the social birthday experience.</p>
+    </aside>
+</section>
+{% endblock %}

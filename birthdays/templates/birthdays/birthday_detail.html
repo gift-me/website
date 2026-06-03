@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}{{ page.name }} turns {{ page.age_turning }} | GiftMe{% endblock %}
+{% block content %}
+<section class="birthday-layout">
+    <article class="card profile-main">
+        <div class="profile-head">
+            <div>
+                <h1>{{ page.name }} turns {{ page.age_turning }} today <span>🎉</span></h1>
+                <p>{{ page.bio|default:"Celebrate with me through virtual gifts." }}</p>
+            </div>
+            <span class="badge">giftme.co.ke/{{ page.slug }}</span>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat">
+                <small>Gifts received</small>
+                <strong>{{ recent_count }}</strong>
+            </div>
+            <div class="stat">
+                <small>Raised</small>
+                <strong>KES {{ page.total_raised }}</strong>
+            </div>
+            <div class="stat">
+                <small>Goal</small>
+                <strong>KES {{ page.goal_amount }}</strong>
+            </div>
+        </div>
+
+        <div class="progress">
+            <div class="progress-fill" style="width: {{ page.progress_percent }}%;"></div>
+        </div>
+        <small class="muted">{{ page.progress_percent }}% funded</small>
+
+        <div class="countdown card-lite" data-countdown="{{ page.countdown_seconds }}">
+            <i class="fa-regular fa-hourglass-half"></i>
+            <span class="countdown-text">Birthday countdown loading...</span>
+        </div>
+    </article>
+
+    <aside class="card action-panel">
+        <h3>Send a virtual gift</h3>
+        <form method="post">
+            {% csrf_token %}
+            {% for field in gift_form %}
+            <div class="field">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% for error in field.errors %}<small class="error">{{ error }}</small>{% endfor %}
+            </div>
+            {% endfor %}
+            <button class="btn btn-primary" type="submit"><i class="fa-solid fa-paper-plane"></i> Send Gift</button>
+        </form>
+
+        <div class="share-block">
+            <h4>Share page</h4>
+            <p class="muted" id="share-link">{{ request.build_absolute_uri }}</p>
+            <div id="qr-code"></div>
+        </div>
+    </aside>
+</section>
+
+<section class="card gift-catalog">
+    <h3>Gift menu</h3>
+    <div class="gift-grid">
+        {% for option in page.gift_options.all %}
+        <div class="gift-item" data-animation="{{ option.animation }}">
+            <i class="fa-solid {{ option.icon }}"></i>
+            <strong>{{ option.label }}</strong>
+            <span>{% if option.amount %}KES {{ option.amount }}{% else %}Any Amount{% endif %}</span>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="card">
+    <h3>Digital gift wall</h3>
+    <div class="gift-wall" id="gift-wall">
+        {% for gift in gifts %}
+        <div class="gift-note" data-animation="{{ gift.option.animation|default:'confetti' }}">
+            <div class="gift-title">
+                <i class="fa-solid {{ gift.option.icon|default:'fa-gift' }}"></i>
+                <strong>{{ gift.option.label|default:"Surprise Gift" }} from {{ gift.display_sender }}</strong>
+            </div>
+            <p>{{ gift.message|default:"Happy Birthday!" }}</p>
+        </div>
+        {% empty %}
+        <p class="muted">No gifts yet. Be the first to light up this wall.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+{% endblock %}

@@ -1,0 +1,259 @@
+"""
+Safaricom Daraja M-Pesa STK Push (Lipa na M-Pesa Online) client.
+
+Sandbox docs: https://developer.safaricom.co.ke/APIs/MpesaExpressSimulate
+"""
+
+import base64
+import json
+import logging
+from datetime import datetime
+from decimal import Decimal, InvalidOperation
+from urllib.parse import urlparse
+
+import requests
+from django.conf import settings
+
+from .conversions import whole_number
+from .debug_print import debug_print
+from .exceptions import MpesaError
+
+logger = logging.getLogger(__name__)
+
+
+def normalize_callback_url(url):
+    """Validate and normalize the Daraja STK callback URL."""
+    callback = (url or "").strip()
+    if not callback:
+        raise MpesaError(
+            "MPESA_CALLBACK_URL is not set. Add your HTTPS callback URL to .env and restart the server."
+        )
+
+    parsed = urlparse(callback)
+    if parsed.scheme != "https" or not parsed.netloc:
+        raise MpesaError("MPESA_CALLBACK_URL must be a full HTTPS URL (use ngrok for local sandbox).")
+
+    host = parsed.netloc.split(":")[0]
+    if "." not in host:
+        raise MpesaError(
+            f"MPESA_CALLBACK_URL host looks incomplete ({host}). "
+            "Use your full ngrok URL, e.g. https://your-subdomain.ngrok-free.dev/api/mpesa/callback/"
+        )
+
+    path = parsed.path.rstrip("/") or "/api/mpesa/callback"
+    if not path.endswith("/api/mpesa/callback"):
+        logger.warning("MPESA_CALLBACK_URL path is %s; expected /api/mpesa/callback", parsed.path)
+
+    return f"https://{parsed.netloc}{path}/"
+
+
+def normalize_phone(phone):
+    """Normalize Kenyan numbers to 2547XXXXXXXX."""
+    digits = "".join(c for c in f"{phone}" if c.isdigit())
+    if digits.startswith("254") and len(digits) == 12:
+        return digits
+    if digits.startswith("0") and len(digits) == 10:
+        return "254" + digits[1:]
+    if len(digits) == 9 and digits[:1] in ("7", "1"):
+        return "254" + digits
+    raise MpesaError("Enter a valid Kenyan M-Pesa number (e.g. 0712345678).")
+
+
+def parse_stk_callback(body):
+    """
+    Parse Daraja STK callback body.
+
+    Returns dict with keys:
+      checkout_request_id, merchant_request_id, result_code,
+      result_desc, success, amount, mpesa_receipt, phone
+    """
+    callback = (body or {}).get("Body", {}).get("stkCallback", {})
+    result_code = callback.get("ResultCode")
+    metadata = {}
+    for item in callback.get("CallbackMetadata", {}).get("Item", []):
+        metadata[item.get("Name")] = item.get("Value")
+
+    return {
+        "checkout_request_id": callback.get("CheckoutRequestID", ""),
+        "merchant_request_id": callback.get("MerchantRequestID", ""),
+        "result_code": result_code,
+        "result_desc": callback.get("ResultDesc", ""),
+        "success": f"{result_code}" == "0",
+        "amount": metadata.get("Amount"),
+        "mpesa_receipt": metadata.get("MpesaReceiptNumber", ""),
+        "phone": metadata.get("PhoneNumber"),
+        "transaction_date": metadata.get("TransactionDate"),
+    }
+
+
+def _parse_whole_kes_amount(amount):
+    """Return a whole-number KES amount suitable for Daraja JSON payloads."""
+    try:
+        amount_kes = Decimal(f"{amount}")
+    except InvalidOperation as exc:
+        raise MpesaError("Amount must be at least KES 1.") from exc
+
+    if amount_kes < 1 or amount_kes != amount_kes.to_integral_value():
+        raise MpesaError("Amount must be at least KES 1.")
+
+    return whole_number(amount_kes)
+
+
+class MpesaClient:
+    """Minimal Daraja API client for OAuth + STK Push."""
+
+    format_phone = staticmethod(normalize_phone)
+    parse_stk_callback = staticmethod(parse_stk_callback)
+
+    def __init__(self):
+        self.base_url = settings.MPESA_BASE_URL.rstrip("/")
+        self.consumer_key = settings.MPESA_CONSUMER_KEY
+        self.consumer_secret = settings.MPESA_CONSUMER_SECRET
+        self.shortcode = settings.MPESA_SHORTCODE
+        self.passkey = settings.MPESA_PASSKEY
+        self.callback_url = normalize_callback_url(settings.MPESA_CALLBACK_URL)
+        self.transaction_type = settings.MPESA_TRANSACTION_TYPE
+
+    def _headers(self, access_token):
+        return {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+        }
+
+    def get_access_token(self):
+        if not self.consumer_key or not self.consumer_secret:
+            raise MpesaError("MPESA_CONSUMER_KEY and MPESA_CONSUMER_SECRET are required.")
+
+        debug_print("[MPESA_OAUTH_REQUEST]", "env=", settings.MPESA_ENV, "base_url=", self.base_url)
+        url = f"{self.base_url}/oauth/v1/generate?grant_type=client_credentials"
+        response = requests.get(
+            url,
+            auth=(self.consumer_key, self.consumer_secret),
+            timeout=30,
+        )
+        try:
+            data = response.json()
+        except json.JSONDecodeError as exc:
+            raise MpesaError("Invalid OAuth response from Daraja.", response.text) from exc
+
+        if response.status_code != 200 or "access_token" not in data:
+            debug_print("[MPESA_OAUTH_ERROR]", "status=", response.status_code, "data=", data)
+            raise MpesaError(
+                data.get("errorMessage") or data.get("error") or "Failed to obtain M-Pesa access token.",
+                data,
+            )
+        return data["access_token"]
+
+    def _password_payload(self, timestamp):
+        raw = f"{self.shortcode}{self.passkey}{timestamp}"
+        return base64.b64encode(raw.encode()).decode()
+
+    def stk_push(self, phone, amount, account_reference, transaction_desc):
+        """
+        Initiate STK Push. Returns Daraja response dict on acceptance.
+
+        amount: integer KES
+        account_reference: max 12 chars (invoice / order ref)
+        transaction_desc: short description shown to customer
+        """
+        if not self.shortcode or not self.passkey:
+            raise MpesaError("MPESA_SHORTCODE and MPESA_PASSKEY are required.")
+
+        amount = _parse_whole_kes_amount(amount)
+        phone = normalize_phone(phone)
+        debug_print(
+            "[MPESA_STK_REQUEST]",
+            "callback=",
+            self.callback_url,
+            "shortcode=",
+            self.shortcode,
+            "phone=",
+            phone,
+            "amount=",
+            amount,
+        )
+        access_token = self.get_access_token()
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        url = f"{self.base_url}/mpesa/stkpush/v1/processrequest"
+
+        payload = {
+            "BusinessShortCode": self.shortcode,
+            "Password": self._password_payload(timestamp),
+            "Timestamp": timestamp,
+            "TransactionType": self.transaction_type,
+            "Amount": amount,
+            "PartyA": phone,
+            "PartyB": self.shortcode,
+            "PhoneNumber": phone,
+            "CallBackURL": self.callback_url,
+            "AccountReference": f"{account_reference}"[:12],
+            "TransactionDesc": f"{transaction_desc}"[:13],
+        }
+
+        response = requests.post(
+            url,
+            json=payload,
+            headers=self._headers(access_token),
+            timeout=30,
+        )
+
+        try:
+            data = response.json()
+        except json.JSONDecodeError as exc:
+            raise MpesaError("Invalid STK Push response from Daraja.", response.text) from exc
+
+        if response.status_code != 200:
+            debug_print("[MPESA_STK_HTTP_ERROR]", "status=", response.status_code, "data=", data)
+            raise MpesaError(
+                data.get("errorMessage") or data.get("error") or "STK Push request failed.",
+                data,
+            )
+
+        if f"{data.get('ResponseCode', '')}" != "0":
+            debug_print("[MPESA_STK_REJECTED]", data)
+            raise MpesaError(
+                data.get("ResponseDescription") or data.get("CustomerMessage") or "STK Push rejected.",
+                data,
+            )
+
+        return data
+
+    def stk_query(self, checkout_request_id):
+        """Query Daraja for final status when callback is delayed/missed."""
+        if not checkout_request_id:
+            raise MpesaError("CheckoutRequestID is required for STK query.")
+
+        access_token = self.get_access_token()
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        url = f"{self.base_url}/mpesa/stkpushquery/v1/query"
+        payload = {
+            "BusinessShortCode": self.shortcode,
+            "Password": self._password_payload(timestamp),
+            "Timestamp": timestamp,
+            "CheckoutRequestID": checkout_request_id,
+        }
+        response = requests.post(
+            url,
+            json=payload,
+            headers=self._headers(access_token),
+            timeout=30,
+        )
+        try:
+            data = response.json()
+        except json.JSONDecodeError as exc:
+            raise MpesaError("Invalid STK Query response from Daraja.", response.text) from exc
+
+        if response.status_code != 200 or f"{data.get('ResponseCode', '')}" != "0":
+            debug_print("[MPESA_STK_QUERY_FAILED]", data)
+            raise MpesaError(
+                data.get("errorMessage")
+                or data.get("error")
+                or data.get("ResponseDescription")
+                or "STK Query failed.",
+                data,
+            )
+        return data
+
+
+def get_mpesa_client():
+    return MpesaClient()

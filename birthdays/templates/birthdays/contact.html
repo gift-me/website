@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Contact | GiftMe{% endblock %}
+{% block content %}
+<section class="card" style="max-width: 760px;">
+    <h1>Contact Us</h1>
+    <p class="muted">Need help planning a surprise for your partner, friend, or family member? Send us a request and our team will guide you.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="field">
+            <label for="name">Full Name</label>
+            <input id="name" name="name" required>
+        </div>
+        <div class="field">
+            <label for="email">Email Address</label>
+            <input id="email" type="email" name="email" required>
+        </div>
+        <div class="field">
+            <label for="request_type">Request Type</label>
+            <select id="request_type" name="request_type" required>
+                <option value="">Choose one</option>
+                <option value="surprise-partner">Surprise for partner</option>
+                <option value="birthday-campaign">Birthday campaign setup</option>
+                <option value="group-gifting">Group gifting support</option>
+                <option value="other">Other</option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="details">Tell us what you need</label>
+            <textarea id="details" name="details" rows="5" required></textarea>
+        </div>
+        <button class="btn btn-primary" type="submit">Submit Request</button>
+    </form>
+</section>
+{% endblock %}

@@ -1,0 +1,5 @@
+Django>=6.0
+django-allauth
+Pillow
+requests
+python-dotenv

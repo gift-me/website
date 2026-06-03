@@ -1,0 +1,50 @@
+{% extends "auth_base.html" %}
+{% block title %}Login | GiftMe{% endblock %}
+{% block content %}
+<section class="auth-card">
+    <div class="auth-topbar">
+        <a href="{% url 'home' %}" class="auth-back-inline" aria-label="Back to home">
+            <i class="fa-solid fa-arrow-left"></i>
+        </a>
+        <div class="auth-brand"><i class="fa-solid fa-gift"></i> GiftMe</div>
+        <span class="auth-topbar-spacer"></span>
+    </div>
+
+    <h1>Welcome back</h1>
+
+    <form method="post" action="{% url 'account_login' %}" class="auth-form">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div class="auth-error">{{ form.non_field_errors.0 }}</div>
+        {% endif %}
+
+        <div class="field">
+            <label for="id_login">Email</label>
+            <input type="email" name="login" id="id_login" class="auth-input" placeholder="you@example.com" required autofocus {% if form.login.value %}value="{{ form.login.value }}"{% endif %}>
+            {% for error in form.login.errors %}<span class="auth-error">{{ error }}</span>{% endfor %}
+        </div>
+
+        <div class="field">
+            <label for="id_password">Password</label>
+            <div class="password-wrap">
+                <input type="password" name="password" id="id_password" class="auth-input" placeholder="Your password" required>
+                <button type="button" class="password-toggle" data-target="id_password" aria-label="Show password">
+                    <i class="fa-regular fa-eye"></i>
+                </button>
+            </div>
+            {% for error in form.password.errors %}<span class="auth-error">{{ error }}</span>{% endfor %}
+        </div>
+
+        {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+        {% endif %}
+
+        <button type="submit" class="auth-submit btn-with-icon" title="Login">
+            <span class="btn-label">Login</span>
+            <svg aria-hidden="true"><use href="#icon-arrow-right"/></svg>
+        </button>
+    </form>
+
+    <p class="auth-meta">New here? <a href="{% url 'account_signup' %}">Create an account</a></p>
+</section>
+{% endblock %}

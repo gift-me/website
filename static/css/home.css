@@ -1,0 +1,83 @@
+.hero {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 1.2rem;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.hero-copy h1 {
+    font-size: clamp(2rem, 5vw, 3rem);
+    margin: 0 0 0.6rem;
+}
+
+.hero-copy p {
+    margin: 0;
+    color: #4a4a4a;
+    max-width: 60ch;
+}
+
+.hero-actions {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.highlight {
+    color: var(--primary);
+}
+
+.hero-panel {
+    background: linear-gradient(145deg, #fff8e0, #fff);
+}
+
+.feature-list {
+    margin: 0;
+    padding-left: 1.1rem;
+}
+
+.feature-list li {
+    margin-bottom: 0.5rem;
+}
+
+.section-title {
+    margin: 0 0 0.8rem;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.9rem;
+}
+
+.info-card i {
+    color: var(--accent);
+    font-size: 1.2rem;
+}
+
+.cta-band {
+    margin-top: 1.2rem;
+    background: var(--secondary);
+}
+
+.cta-band p {
+    margin: 0.4rem 0 0.9rem;
+}
+
+.page-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.9rem;
+    margin-top: 1rem;
+}
+
+@media (max-width: 900px) {
+    .hero {
+        grid-template-columns: 1fr;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+}

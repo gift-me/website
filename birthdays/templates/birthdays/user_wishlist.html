@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ display_username }}'s Wishlist | GiftMe{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/gift-page.css' %}">
+<link rel="stylesheet" href="{% static 'css/wishlist-page.css' %}">
+{% endblock %}
+{% block content %}
+<section class="wishlist-page">
+    <header class="wishlist-page-head">
+        {% if profile.profile_picture %}
+        <img class="wishlist-page-avatar" src="{{ profile.profile_picture.url }}" alt="">
+        {% endif %}
+        <h1>{{ display_username }}'s wishlist</h1>
+        <p class="wishlist-page-hint">Tap an item to contribute. You can gift any amount, even if the goal is reached.</p>
+    </header>
+
+    <ul class="wishlist-items">
+        {% for item in items %}
+        <li>
+            <button type="button" class="wishlist-item-btn" data-wishlist-id="{{ item.id }}" data-wishlist-title="{{ item.title }}" data-wishlist-target="{{ item.target_amount|floatformat:0 }}">
+                <div class="wishlist-item-main">
+                    <span class="wishlist-item-title">{{ item.title }}</span>
+                    <span class="wishlist-item-meta">KES {{ item.raised_amount }} of {{ item.target_amount }} · {{ item.progress_percent }}%</span>
+                </div>
+                <div class="wishlist-item-progress">
+                    <div class="wishlist-item-progress-bar" style="width:{{ item.progress_percent }}%"></div>
+                </div>
+                <i class="fa-solid fa-chevron-right wishlist-item-chevron" aria-hidden="true"></i>
+            </button>
+        </li>
+        {% empty %}
+        <li class="wishlist-empty">No wishlist items yet.</li>
+        {% endfor %}
+    </ul>
+</section>
+
+{% include "birthdays/includes/contribute_modal.html" %}
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'js/contribute-modal.js' %}"></script>
+<script src="{% static 'js/wishlist-page.js' %}"></script>
+{% endblock %}

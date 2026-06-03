@@ -1,0 +1,64 @@
+{% load static %}
+<div class="gift-modal" id="contribute-modal" hidden
+     data-page-type="{{ page_type|default:'gift' }}"
+     data-page-slug="{{ page_slug|default:'' }}">
+    <div class="gift-modal-backdrop" data-close-contribute></div>
+    <div class="gift-modal-card">
+        <button type="button" class="gift-modal-close" data-close-contribute aria-label="Close">&times;</button>
+
+        <div id="contrib-state-form">
+            <h2 id="contribute-modal-title">Send a gift</h2>
+            <p class="gift-modal-sub" id="contribute-modal-sub" hidden></p>
+            <p class="gift-modal-error" id="contribute-modal-error" hidden></p>
+
+            <form id="contribute-form">
+                {% csrf_token %}
+                <input type="hidden" name="gift_id" id="contrib-gift-id" value="">
+                <input type="hidden" name="wishlist_item_id" id="contrib-wishlist-id" value="">
+
+                <div class="gift-modal-field" id="contrib-amount-wrap">
+                    <label for="contrib-amount">Amount (KES)</label>
+                    <input type="number" name="amount" id="contrib-amount" min="1" step="1" placeholder="500">
+                </div>
+
+                <div class="gift-modal-field">
+                    <label for="contrib-name">Your name <span class="opt">(optional)</span></label>
+                    <input type="text" name="sender_name" id="contrib-name" maxlength="120" placeholder="Your name">
+                </div>
+
+                <div class="gift-modal-field">
+                    <label for="contrib-phone">M-Pesa number</label>
+                    <input type="tel" name="payer_phone" id="contrib-phone" inputmode="numeric" pattern="07[0-9]{8}" maxlength="10" placeholder="0712345678" required>
+                </div>
+
+                <div class="gift-modal-field">
+                    <label for="contrib-message">Message <span class="opt">(optional)</span></label>
+                    <textarea name="message" id="contrib-message" maxlength="220" rows="3" placeholder="Write a short message"></textarea>
+                    <small class="char-count"><span id="contrib-message-count">0</span>/220</small>
+                </div>
+
+                <button type="submit" class="gift-modal-submit" id="contrib-submit-btn" title="Send gift">
+                    <i class="fa-solid fa-gift" id="contrib-submit-icon"></i>
+                    <span id="contrib-submit-label">Gift</span>
+                </button>
+            </form>
+        </div>
+
+        <div id="contrib-state-loading" class="contrib-state-panel" hidden>
+            <div class="contrib-spinner" aria-hidden="true"></div>
+            <h2>Check your phone</h2>
+            <p>M-Pesa STK prompt sent. Enter your PIN to complete payment.</p>
+        </div>
+
+        <div id="contrib-state-success" class="contrib-state-panel" hidden>
+            <div class="contrib-success-icon"><i class="fa-solid fa-circle-check"></i></div>
+            <h2>Payment successful!</h2>
+            <p id="contrib-success-text">Thank you for your gift.</p>
+            <a href="#" class="gift-modal-share" id="contrib-whatsapp-share" target="_blank" rel="noopener">
+                <i class="fa-brands fa-whatsapp"></i>
+                Share &amp; notify them
+            </a>
+            <button type="button" class="gift-modal-done" data-close-contribute>Done</button>
+        </div>
+    </div>
+</div>

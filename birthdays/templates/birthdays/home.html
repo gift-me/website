@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}GiftMe | Home{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/home.css' %}">{% endblock %}
+{% block content %}
+<section class="hero">
+    <div class="hero-copy">
+        <h1>Gift better. <span class="highlight">Celebrate louder.</span></h1>
+        <p>GiftMe turns birthdays, anniversaries, and surprise moments into beautiful public pages where friends can contribute meaningful gifts.</p>
+        <div class="hero-actions">
+            <a class="btn btn-primary" href="{% url 'account_signup' %}"><i class="fa-solid fa-user-plus"></i> Sign Up</a>
+            <a class="btn btn-outline" href="{% url 'account_login' %}"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
+        </div>
+    </div>
+    <div class="hero-panel card">
+        <h3>Why people use GiftMe</h3>
+        <ul class="feature-list">
+            <li>Personalized event pages with gift goals</li>
+            <li>Sharable links and QR-ready moments</li>
+            <li>Perfect for birthdays, proposals and surprise plans</li>
+            <li>Safe account access with email login/signup</li>
+        </ul>
+    </div>
+</section>
+
+<section>
+    <h2 class="section-title">How it works</h2>
+    <div class="info-grid">
+        <article class="card info-card">
+            <i class="fa-solid fa-pen-to-square"></i>
+            <h3>Create Your Page</h3>
+            <p>Set up your event page with your story, target, and your celebration details.</p>
+        </article>
+        <article class="card info-card">
+            <i class="fa-solid fa-share-nodes"></i>
+            <h3>Share With Friends</h3>
+            <p>Share your page across WhatsApp, Instagram, Facebook, and your circle instantly.</p>
+        </article>
+        <article class="card info-card">
+            <i class="fa-solid fa-gift"></i>
+            <h3>Receive Gifts</h3>
+            <p>Friends can gift you directly and leave warm messages on your digital celebration wall.</p>
+        </article>
+    </div>
+</section>
+
+<section class="page-grid">
+    {% for page in pages %}
+    <article class="card">
+        <h3>{{ page.name }} turns {{ page.age_turning }}</h3>
+        <p>{{ page.bio|default:"Event gifting page."|truncatechars:90 }}</p>
+        <a class="btn btn-outline" href="{{ page.get_absolute_url }}">View Page</a>
+    </article>
+    {% empty %}
+    <article class="card">
+        <h3>No campaigns yet</h3>
+        <p>Be the first to create a celebration page.</p>
+        <a class="btn btn-primary" href="{% url 'account_signup' %}">Get started</a>
+    </article>
+    {% endfor %}
+</section>
+
+<section class="card cta-band">
+    <h2>Planning a surprise for someone special?</h2>
+    <p>Use our request form and we will help you craft a memorable gifting experience.</p>
+    <a class="btn btn-primary" href="{% url 'contact' %}">Contact Us</a>
+</section>
+{% endblock %}
