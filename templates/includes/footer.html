@@ -1,0 +1,52 @@
+{% load static %}
+<footer class="site-footer">
+    <div class="container footer-grid">
+        <div class="footer-brand">
+            <a href="{% url 'home' %}" class="footer-brand-link">
+                {% include "includes/brand_logo.html" with size="footer" width=20 height=20 %}
+                GiftMe
+            </a>
+            <p class="footer-brand-desc">Celebration pages for meaningful gifting; personal, shareable, and built for the moments that matter.</p>
+            <div class="footer-social" aria-label="Social media">
+                <a href="https://instagram.com/giftme" target="_blank" rel="noopener noreferrer" aria-label="GiftMe on Instagram"><i class="fa-brands fa-instagram" aria-hidden="true"></i></a>
+                <a href="https://tiktok.com/@giftme" target="_blank" rel="noopener noreferrer" aria-label="GiftMe on TikTok"><i class="fa-brands fa-tiktok" aria-hidden="true"></i></a>
+                <a href="https://wa.me/254712345678" target="_blank" rel="noopener noreferrer" aria-label="GiftMe on WhatsApp"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i></a>
+            </div>
+        </div>
+
+        <div class="footer-col">
+            <h4 class="footer-col__title">Quick Links</h4>
+            <nav class="footer-links footer-links--stack" aria-label="Footer">
+                <a href="{% url 'home' %}#how-it-works">How?</a>
+                <a href="{% url 'home' %}#about">About</a>
+                <a href="{% url 'home' %}#testimonials">Testimonials</a>
+                <a href="{% url 'home' %}#contact">Contact</a>
+            </nav>
+        </div>
+
+        <div class="footer-col footer-col--contact">
+            <h4 class="footer-col__title">Contact</h4>
+            <p class="footer-location">
+                <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                Nairobi, Kenya
+            </p>
+            <a href="{% url 'home' %}#contact" class="cta-secondary footer-talk-link">
+                <svg class="cta-secondary__icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-cta-chat"/></svg>
+                Talk to Us
+            </a>
+        </div>
+    </div>
+
+    <div class="footer-bottom" style="--footer-art: url('{% static 'images/footer.svg' %}')">
+        <div class="container footer-bottom-row">
+            <p class="footer-copyright footer-bottom-chip">&copy; {% now "Y" %} GiftMe. All rights reserved.</p>
+            <nav class="footer-legal footer-bottom-chip" aria-label="Legal">
+                <a href="{% url 'privacy' %}">Privacy</a>
+                <span class="footer-legal__dot" aria-hidden="true">·</span>
+                <a href="{% url 'terms' %}">Terms</a>
+                <span class="footer-legal__dot" aria-hidden="true">·</span>
+                <a href="{% url 'accessibility' %}">Accessibility</a>
+            </nav>
+        </div>
+    </div>
+</footer>

@@ -1,9 +1,94 @@
-{% extends "base.html" %}
-{% block title %}Privacy Policy | GiftMe{% endblock %}
-{% block content %}
-<section class="card">
-    <h1>Privacy Policy</h1>
-    <p>GiftMe respects your privacy and only collects data required to provide account access, campaign pages, and support responses.</p>
-    <p>We keep personal information secure and do not sell your personal data. Contact us for any data access or removal request.</p>
+{% extends "birthdays/legal_base.html" %}
+
+{% block legal_title %}Privacy Policy{% endblock %}
+{% block legal_meta %}How GiftMe collects, uses, and protects your personal information when you create celebration pages and receive gifts.{% endblock %}
+{% block legal_eyebrow %}Your data{% endblock %}
+{% block legal_heading %}Privacy <span class="highlight">Policy</span>{% endblock %}
+{% block legal_lead_text %}We built GiftMe for meaningful celebrations — not for selling your data. This policy explains what we collect, why we collect it, and the choices you have.{% endblock %}
+
+{% block legal_content %}
+<section class="legal-section" aria-labelledby="privacy-intro">
+    <h2 id="privacy-intro">Overview</h2>
+    <p>GiftMe (“we”, “us”, “our”) provides celebration gifting pages where friends and family can contribute to meaningful moments. When you use our website, create an account, or interact with a gift page, we process personal information as described here.</p>
+    <p>By using GiftMe, you agree to this Privacy Policy. If you do not agree, please do not use the service.</p>
+</section>
+
+<section class="legal-section" aria-labelledby="privacy-collect">
+    <h2 id="privacy-collect">Information we collect</h2>
+    <p>We collect only what we need to run GiftMe well:</p>
+    <ul>
+        <li><strong>Account information</strong> — name, email address, username, profile details, and authentication credentials when you sign up or update your profile.</li>
+        <li><strong>Celebration page content</strong> — photos, titles, stories, gift goals, messages, and other details you choose to publish on a page.</li>
+        <li><strong>Contribution data</strong> — contributor names, messages, amounts, and payment references when someone supports a celebration page.</li>
+        <li><strong>Payment information</strong> — mobile money details and transaction metadata processed through our payment partners (such as M-Pesa). We do not store full card or PIN data on our servers.</li>
+        <li><strong>Support and contact information</strong> — details you send when you reach out to us for help.</li>
+        <li><strong>Usage and device data</strong> — browser type, IP address, pages visited, and basic analytics that help us improve performance and security.</li>
+    </ul>
+</section>
+
+<section class="legal-section" aria-labelledby="privacy-use">
+    <h2 id="privacy-use">How we use your information</h2>
+    <p>We use personal information to:</p>
+    <ul>
+        <li>Create and manage your account and celebration pages.</li>
+        <li>Process contributions and deliver payment confirmations.</li>
+        <li>Display page content you choose to make public or share via link.</li>
+        <li>Respond to support requests and communicate important service updates.</li>
+        <li>Protect GiftMe against fraud, abuse, and security incidents.</li>
+        <li>Improve features, reliability, and user experience.</li>
+    </ul>
+    <p>We do not sell your personal information to third parties.</p>
+</section>
+
+<section class="legal-section" aria-labelledby="privacy-share">
+    <h2 id="privacy-share">When we share information</h2>
+    <p>We may share information only in limited circumstances:</p>
+    <ul>
+        <li><strong>With your direction</strong> — when you publish a celebration page or share a link, the content you include may be visible to anyone with access to that page.</li>
+        <li><strong>Service providers</strong> — trusted partners who help us host, process payments, send email, or provide analytics, under contractual obligations to protect your data.</li>
+        <li><strong>Legal requirements</strong> — when required by law, regulation, court order, or to protect the rights, safety, and integrity of GiftMe and its users.</li>
+        <li><strong>Business transfers</strong> — in connection with a merger, acquisition, or sale of assets, subject to continued protection of your information.</li>
+    </ul>
+</section>
+
+<section class="legal-section" aria-labelledby="privacy-retention">
+    <h2 id="privacy-retention">Data retention</h2>
+    <p>We keep personal information for as long as your account is active or as needed to provide the service, comply with legal obligations, resolve disputes, and enforce our agreements. You may request deletion of your account and associated data, subject to records we must retain for legal or payment purposes.</p>
+</section>
+
+<section class="legal-section" aria-labelledby="privacy-rights">
+    <h2 id="privacy-rights">Your choices and rights</h2>
+    <p>Depending on where you live, you may have the right to:</p>
+    <ul>
+        <li>Access, update, or correct personal information in your account settings.</li>
+        <li>Request deletion of your account and associated data.</li>
+        <li>Object to or restrict certain processing activities.</li>
+        <li>Withdraw consent where processing is based on consent.</li>
+    </ul>
+    <p>To make a request, contact us using the details below. We may need to verify your identity before responding.</p>
+</section>
+
+<section class="legal-section" aria-labelledby="privacy-security">
+    <h2 id="privacy-security">Security</h2>
+    <p>We use reasonable technical and organizational measures to protect personal information, including access controls and secure transmission where appropriate. No online service can guarantee absolute security, so please use a strong password and keep your login details private.</p>
+</section>
+
+<section class="legal-section" aria-labelledby="privacy-children">
+    <h2 id="privacy-children">Children’s privacy</h2>
+    <p>GiftMe is not directed at children under 13, and we do not knowingly collect personal information from children under 13. If you believe a child has provided us with personal information, please contact us so we can take appropriate action.</p>
+</section>
+
+<section class="legal-section" aria-labelledby="privacy-changes">
+    <h2 id="privacy-changes">Changes to this policy</h2>
+    <p>We may update this Privacy Policy from time to time. When we do, we will revise the “Last updated” date at the top of this page. Continued use of GiftMe after changes become effective means you accept the updated policy.</p>
+</section>
+
+<section class="legal-section" aria-labelledby="privacy-contact">
+    <h2 id="privacy-contact">Contact us</h2>
+    <p>Questions about this policy or your personal data? Reach out — we are happy to help.</p>
+    <div class="legal-contact-card">
+        <p><strong>Email:</strong> <a href="mailto:hello@giftme.app">hello@giftme.app</a></p>
+        <p><strong>Location:</strong> Nairobi, Kenya</p>
+    </div>
 </section>
 {% endblock %}

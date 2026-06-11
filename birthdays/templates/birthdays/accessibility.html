@@ -1,0 +1,77 @@
+{% extends "birthdays/legal_base.html" %}
+
+{% block legal_title %}Accessibility{% endblock %}
+{% block legal_meta %}GiftMe’s commitment to accessible celebration gifting — keyboard navigation, screen readers, readable contrast, and how to report barriers.{% endblock %}
+{% block legal_eyebrow %}Inclusive by design{% endblock %}
+{% block legal_heading %}Accessibility <span class="highlight">Statement</span>{% endblock %}
+{% block legal_lead_text %}Celebrations should be for everyone. We are working to make GiftMe usable, welcoming, and accessible to people with diverse abilities and assistive technologies.{% endblock %}
+
+{% block legal_content %}
+<section class="legal-section" aria-labelledby="a11y-commitment">
+    <h2 id="a11y-commitment">Our commitment</h2>
+    <p>GiftMe is committed to improving accessibility across our marketing pages, account flows, and celebration experiences. We believe meaningful gifting should not depend on how someone sees, hears, moves, or processes information.</p>
+    <p>Accessibility is an ongoing effort. We review new features with inclusion in mind and welcome feedback from the people who use GiftMe every day.</p>
+</section>
+
+<section class="legal-section" aria-labelledby="a11y-standards">
+    <h2 id="a11y-standards">Standards we follow</h2>
+    <p>We aim to conform with the Web Content Accessibility Guidelines (WCAG) 2.1 Level AA where practical. Our work includes:</p>
+    <ul>
+        <li>Semantic HTML structure with headings, landmarks, and descriptive labels.</li>
+        <li>Keyboard-accessible navigation for primary actions and interactive components.</li>
+        <li>Visible focus states and sufficient color contrast for text and controls.</li>
+        <li>Alternative text for meaningful images and decorative images marked appropriately.</li>
+        <li>Form fields associated with clear labels and error messages.</li>
+        <li>Support for screen readers through ARIA attributes where native semantics are not enough.</li>
+    </ul>
+</section>
+
+<section class="legal-section" aria-labelledby="a11y-features">
+    <h2 id="a11y-features">What we are doing</h2>
+    <p>Recent and ongoing accessibility improvements include:</p>
+    <ul>
+        <li>Skip-friendly page structure with labeled navigation regions in the header and footer.</li>
+        <li>Responsive layouts that reflow on smaller screens without loss of content or function.</li>
+        <li>Reduced reliance on color alone to convey important information.</li>
+        <li>Testing keyboard paths through sign-up, dashboard, and public gift page flows.</li>
+        <li>Reviewing motion and animation so essential content remains readable when motion is reduced.</li>
+    </ul>
+</section>
+
+<section class="legal-section" aria-labelledby="a11y-limitations">
+    <h2 id="a11y-limitations">Known limitations</h2>
+    <p>Some areas of GiftMe may not yet meet our accessibility goals. Examples may include:</p>
+    <ul>
+        <li>User-uploaded images on celebration pages, which may lack alternative text unless provided by the page creator.</li>
+        <li>Third-party payment or embed experiences governed by external accessibility practices.</li>
+        <li>Legacy dashboard components that we are gradually improving.</li>
+    </ul>
+    <p>We prioritize fixes that remove barriers to core tasks such as creating a page, sharing a link, and making a contribution.</p>
+</section>
+
+<section class="legal-section" aria-labelledby="a11y-third-party">
+    <h2 id="a11y-third-party">Third-party content</h2>
+    <p>GiftMe may link to or integrate content from social platforms, payment providers, and illustration libraries. We cannot fully control the accessibility of those external services, but we choose partners carefully and advocate for inclusive experiences wherever we can.</p>
+</section>
+
+<section class="legal-section" aria-labelledby="a11y-feedback">
+    <h2 id="a11y-feedback">Feedback and assistance</h2>
+    <p>If you encounter a barrier while using GiftMe — or if you need information in an alternative format — please tell us. We will do our best to respond promptly and work toward a solution.</p>
+    <p>When you contact us, it helps to include:</p>
+    <ul>
+        <li>The page or feature you were using.</li>
+        <li>What you were trying to do.</li>
+        <li>The assistive technology or browser you use, if applicable.</li>
+    </ul>
+    <div class="legal-contact-card">
+        <p><strong>Email:</strong> <a href="mailto:hello@giftme.app">hello@giftme.app</a></p>
+        <p><strong>Contact form:</strong> <a href="{% url 'home' %}#contact">Get in touch on our homepage</a></p>
+        <p><strong>Location:</strong> Nairobi, Kenya</p>
+    </div>
+</section>
+
+<section class="legal-section" aria-labelledby="a11y-updates">
+    <h2 id="a11y-updates">Updates to this statement</h2>
+    <p>We will update this accessibility statement as our product and practices evolve. Check the “Last updated” date at the top of this page for the latest version.</p>
+</section>
+{% endblock %}

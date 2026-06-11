@@ -348,7 +348,6 @@
     color: var(--gift-muted);
     line-height: 1.25;
     display: -webkit-box;
-    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -566,22 +565,16 @@
     border: 0;
     border-radius: 12px;
     padding: 0.8rem 1rem;
-    background: #E63946;
-    background-color: #E63946;
+    background: var(--red);
+    background-color: var(--red);
     color: #fff;
     font-family: inherit;
     font-size: 1rem;
     font-weight: 600;
-    cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-}
-
-.gift-modal-submit:hover {
-    background: #cc2f3b;
-    background-color: #cc2f3b;
 }
 
 .gift-modal-error {

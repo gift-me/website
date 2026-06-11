@@ -65,6 +65,10 @@ def terms(request):
     return render(request, "birthdays/terms.html")
 
 
+def accessibility(request):
+    return render(request, "birthdays/accessibility.html")
+
+
 MIN_WITHDRAWAL = Decimal("500")
 MPESA_PATTERN = re.compile(r"^07\d{8}$")
 

@@ -9,6 +9,7 @@ urlpatterns = [
     path("contact/", views.contact, name="contact"),
     path("privacy-policy/", views.privacy, name="privacy"),
     path("terms-of-service/", views.terms, name="terms"),
+    path("accessibility/", views.accessibility, name="accessibility"),
     path("dashboard/", views.dashboard, name="dashboard"),
     path("profile/setup/", profile_setup, name="profile-setup"),
     path("g/<slug:slug>/", views.user_gift_page, name="user-gift"),

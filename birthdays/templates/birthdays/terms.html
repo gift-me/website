@@ -1,9 +1,101 @@
-{% extends "base.html" %}
-{% block title %}Terms of Service | GiftMe{% endblock %}
-{% block content %}
-<section class="card">
-    <h1>Terms of Service</h1>
-    <p>By using GiftMe, you agree to use the platform responsibly and provide accurate campaign details. Fraudulent or abusive use is prohibited.</p>
-    <p>GiftMe may update features and terms over time. Continued use of the platform means acceptance of the latest terms.</p>
+{% extends "birthdays/legal_base.html" %}
+
+{% block legal_title %}Terms of Service{% endblock %}
+{% block legal_meta %}Terms and conditions for using GiftMe celebration pages, contributions, and related services.{% endblock %}
+{% block legal_eyebrow %}Using GiftMe{% endblock %}
+{% block legal_heading %}Terms of <span class="highlight">Service</span>{% endblock %}
+{% block legal_lead_text %}These terms govern your use of GiftMe. Please read them carefully — they help keep celebrations joyful, safe, and fair for everyone.{% endblock %}
+
+{% block legal_content %}
+<section class="legal-section" aria-labelledby="terms-agreement">
+    <h2 id="terms-agreement">Agreement to terms</h2>
+    <p>These Terms of Service (“Terms”) form a binding agreement between you and GiftMe. By accessing or using our website, creating an account, or contributing to a celebration page, you agree to these Terms and our <a href="{% url 'privacy' %}">Privacy Policy</a>.</p>
+    <p>If you do not agree, you may not use GiftMe.</p>
+</section>
+
+<section class="legal-section" aria-labelledby="terms-eligibility">
+    <h2 id="terms-eligibility">Eligibility</h2>
+    <p>You must be at least 18 years old — or the age of majority in your jurisdiction — to create an account. If you are using GiftMe on behalf of an organization, you represent that you have authority to bind that organization to these Terms.</p>
+</section>
+
+<section class="legal-section" aria-labelledby="terms-accounts">
+    <h2 id="terms-accounts">Accounts</h2>
+    <p>You are responsible for maintaining the confidentiality of your login credentials and for all activity under your account. Provide accurate information when registering and keep your profile details up to date. Notify us promptly if you suspect unauthorized access to your account.</p>
+</section>
+
+<section class="legal-section" aria-labelledby="terms-pages">
+    <h2 id="terms-pages">Celebration pages and content</h2>
+    <p>You may create and share celebration pages that include text, images, and gift goals. You retain ownership of content you submit, but you grant GiftMe a non-exclusive license to host, display, and distribute that content as needed to operate the service.</p>
+    <p>You agree that your content:</p>
+    <ul>
+        <li>Is accurate to the best of your knowledge and not misleading.</li>
+        <li>Does not infringe anyone’s intellectual property, privacy, or other rights.</li>
+        <li>Does not contain unlawful, hateful, harassing, or fraudulent material.</li>
+        <li>Complies with applicable laws and platform guidelines.</li>
+    </ul>
+    <p>We may remove content or suspend pages that violate these Terms or pose a risk to users or the platform.</p>
+</section>
+
+<section class="legal-section" aria-labelledby="terms-payments">
+    <h2 id="terms-payments">Contributions and payments</h2>
+    <p>GiftMe facilitates contributions to celebration pages through third-party payment providers. By making or receiving a contribution, you agree to the applicable payment provider’s terms in addition to these Terms.</p>
+    <ul>
+        <li>Contributions are intended as gifts or support for the stated celebration purpose.</li>
+        <li>Processing times, fees, and refund eligibility may depend on the payment method and provider policies.</li>
+        <li>GiftMe is not a bank, escrow service, or financial institution. We do not guarantee that any fundraising goal will be met.</li>
+        <li>You are responsible for any taxes or reporting obligations related to funds you receive, where applicable.</li>
+    </ul>
+</section>
+
+<section class="legal-section" aria-labelledby="terms-conduct">
+    <h2 id="terms-conduct">Prohibited conduct</h2>
+    <p>You may not use GiftMe to:</p>
+    <ul>
+        <li>Engage in fraud, impersonation, or misrepresentation.</li>
+        <li>Collect contributions for illegal, deceptive, or unauthorized purposes.</li>
+        <li>Attempt to access accounts, systems, or data without permission.</li>
+        <li>Upload malware, scrape the service, or interfere with normal operation.</li>
+        <li>Harass, threaten, or harm other users.</li>
+    </ul>
+    <p>We may investigate violations and take action including content removal, account suspension, or termination.</p>
+</section>
+
+<section class="legal-section" aria-labelledby="terms-ip">
+    <h2 id="terms-ip">Intellectual property</h2>
+    <p>The GiftMe name, logo, website design, and underlying software are owned by GiftMe or our licensors. You may not copy, modify, or exploit our branding or code except as permitted by these Terms or with our written consent.</p>
+</section>
+
+<section class="legal-section" aria-labelledby="terms-availability">
+    <h2 id="terms-availability">Service availability</h2>
+    <p>We strive to keep GiftMe reliable, but the service is provided on an “as is” and “as available” basis. We may modify, suspend, or discontinue features at any time. We are not liable for downtime, data loss, or interruptions beyond what applicable law requires.</p>
+</section>
+
+<section class="legal-section" aria-labelledby="terms-liability">
+    <h2 id="terms-liability">Limitation of liability</h2>
+    <p>To the fullest extent permitted by law, GiftMe and its team will not be liable for indirect, incidental, special, consequential, or punitive damages arising from your use of the service. Our total liability for any claim related to GiftMe will not exceed the greater of the amount you paid us in the twelve months before the claim or one hundred US dollars (USD $100), where permitted by law.</p>
+</section>
+
+<section class="legal-section" aria-labelledby="terms-termination">
+    <h2 id="terms-termination">Termination</h2>
+    <p>You may stop using GiftMe at any time. We may suspend or terminate your access if you breach these Terms or if continued access poses a risk to the platform or other users. Provisions that by nature should survive termination — including ownership, disclaimers, and limitations of liability — will remain in effect.</p>
+</section>
+
+<section class="legal-section" aria-labelledby="terms-changes">
+    <h2 id="terms-changes">Changes to these terms</h2>
+    <p>We may update these Terms from time to time. When we do, we will update the “Last updated” date at the top of this page. Material changes may be communicated through the service or by email where appropriate. Continued use after changes take effect constitutes acceptance of the revised Terms.</p>
+</section>
+
+<section class="legal-section" aria-labelledby="terms-law">
+    <h2 id="terms-law">Governing law</h2>
+    <p>These Terms are governed by the laws of Kenya, without regard to conflict-of-law principles. Disputes will be handled in the courts of Nairobi, Kenya, unless otherwise required by applicable consumer protection law.</p>
+</section>
+
+<section class="legal-section" aria-labelledby="terms-contact">
+    <h2 id="terms-contact">Contact us</h2>
+    <p>Questions about these Terms? Get in touch.</p>
+    <div class="legal-contact-card">
+        <p><strong>Email:</strong> <a href="mailto:hello@giftme.app">hello@giftme.app</a></p>
+        <p><strong>Location:</strong> Nairobi, Kenya</p>
+    </div>
 </section>
 {% endblock %}
