@@ -1,68 +1,330 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}GiftMe | Home{% endblock %}
+
+{% block title %}GiftMe | Gift better. Celebrate louder.{% endblock %}
+{% block body_class %}is-landing{% endblock %}
+{% block main_classes %}landing-main{% endblock %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/home.css' %}">{% endblock %}
+
 {% block content %}
-<section class="hero">
-    <div class="hero-copy">
-        <h1>Gift better. <span class="highlight">Celebrate louder.</span></h1>
-        <p>GiftMe turns birthdays, anniversaries, and surprise moments into beautiful public pages where friends can contribute meaningful gifts.</p>
-        <div class="hero-actions">
-            <a class="btn btn-primary" href="{% url 'account_signup' %}"><i class="fa-solid fa-user-plus"></i> Sign Up</a>
-            <a class="btn btn-outline" href="{% url 'account_login' %}"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
+<div class="landing-page">
+
+    {# ── 1. Hero ── #}
+    <section class="landing-hero relative overflow-hidden pb-6 pt-28 md:pb-8 md:pt-32 lg:pt-40" aria-labelledby="hero-heading">
+
+        {# Background layers #}
+        <div class="pointer-events-none absolute inset-0 -top-[4.25rem] overflow-hidden" aria-hidden="true">
+            <div class="absolute -left-24 top-16 h-72 w-72 rounded-full bg-secondary/25 blur-3xl md:h-96 md:w-96"></div>
+            <div class="absolute -right-16 top-32 h-64 w-64 rounded-full bg-primary/10 blur-3xl md:h-80 md:w-80"></div>
+            <div class="absolute bottom-0 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-accent/10 blur-3xl md:h-72 md:w-72"></div>
+            <div class="absolute left-1/3 top-1/2 h-40 w-40 rounded-full bg-secondary/15 blur-2xl"></div>
+            <div class="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-background"></div>
         </div>
-    </div>
-    <div class="hero-panel card">
-        <h3>Why people use GiftMe</h3>
-        <ul class="feature-list">
-            <li>Personalized event pages with gift goals</li>
-            <li>Sharable links and QR-ready moments</li>
-            <li>Perfect for birthdays, proposals and surprise plans</li>
-            <li>Safe account access with email login/signup</li>
-        </ul>
-    </div>
-</section>
 
-<section>
-    <h2 class="section-title">How it works</h2>
-    <div class="info-grid">
-        <article class="card info-card">
-            <i class="fa-solid fa-pen-to-square"></i>
-            <h3>Create Your Page</h3>
-            <p>Set up your event page with your story, target, and your celebration details.</p>
-        </article>
-        <article class="card info-card">
-            <i class="fa-solid fa-share-nodes"></i>
-            <h3>Share With Friends</h3>
-            <p>Share your page across WhatsApp, Instagram, Facebook, and your circle instantly.</p>
-        </article>
-        <article class="card info-card">
-            <i class="fa-solid fa-gift"></i>
-            <h3>Receive Gifts</h3>
-            <p>Friends can gift you directly and leave warm messages on your digital celebration wall.</p>
-        </article>
-    </div>
-</section>
+        <div class="landing-inner relative">
 
-<section class="page-grid">
-    {% for page in pages %}
-    <article class="card">
-        <h3>{{ page.name }} turns {{ page.age_turning }}</h3>
-        <p>{{ page.bio|default:"Event gifting page."|truncatechars:90 }}</p>
-        <a class="btn btn-outline" href="{{ page.get_absolute_url }}">View Page</a>
-    </article>
-    {% empty %}
-    <article class="card">
-        <h3>No campaigns yet</h3>
-        <p>Be the first to create a celebration page.</p>
-        <a class="btn btn-primary" href="{% url 'account_signup' %}">Get started</a>
-    </article>
-    {% endfor %}
-</section>
+            <div class="lg:grid lg:grid-cols-2 lg:items-center lg:gap-x-6 xl:gap-x-8">
 
-<section class="card cta-band">
-    <h2>Planning a surprise for someone special?</h2>
-    <p>Use our request form and we will help you craft a memorable gifting experience.</p>
-    <a class="btn btn-primary" href="{% url 'contact' %}">Contact Us</a>
-</section>
+                {# Copy column #}
+                <div class="hero-copy">
+                    <h1 id="hero-heading" class="hero-heading reveal font-display mx-auto mb-0 max-w-xl text-center tracking-[-0.025em] text-text lg:mx-0 lg:max-w-lg lg:text-left">
+                        Gift <span class="highlight">better</span><br>
+                        Celebrate <span class="highlight">louder</span>
+                    </h1>
+
+                    <p class="hero-description reveal reveal-delay mx-auto mt-5 max-w-lg text-center font-sans lg:mx-0 lg:text-left">
+                        Every celebration tells a story. Let us help your friends and family become part of it.
+                    </p>
+
+                    <div class="reveal reveal-delay-2 cta-row mt-8 justify-center lg:justify-start">
+                        {% include "includes/landing_cta_primary.html" %}
+                        <a href="#how-it-works" class="cta-secondary">
+                            <svg class="cta-secondary__icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-cta-play"/></svg>
+                            Watch How It Works
+                        </a>
+                    </div>
+                </div>
+
+                {# Scenery column #}
+                <div class="reveal reveal-delay-3 mx-auto mt-8 w-full lg:mt-0 lg:w-full" aria-label="Live celebration board preview">
+
+                {# Mobile orbit chips #}
+                <div class="mb-2 flex flex-wrap justify-center gap-1.5 lg:hidden" aria-hidden="true">
+                    <span class="hero-float-chip-static inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[0.65rem]">
+                        <svg class="h-3 w-3 opacity-60" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-cta-card"/></svg>
+                        Gift Card
+                    </span>
+                    <span class="hero-float-chip-static inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[0.65rem]">
+                        <svg class="h-3 w-3 opacity-60" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-cta-heart"/></svg>
+                        New gift
+                    </span>
+                    <span class="hero-float-chip-static inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[0.65rem]">
+                        <svg class="h-3 w-3 opacity-60" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-cta-party"/></svg>
+                        Birthday
+                    </span>
+                </div>
+
+                <div class="hero-board-stage">
+                    <div class="hero-board-orbit">
+                        {# Desktop floating elements — orbit the card #}
+                        <div class="hero-float-layer pointer-events-none hidden lg:block" aria-hidden="true">
+                            <div class="hero-float-chip hero-float-pos-1">
+                                <svg class="hero-float-chip__icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-cta-card"/></svg>
+                                Gift Card
+                            </div>
+                            <div class="hero-float-chip hero-float-delay-1 hero-float-pos-2">
+                                <svg class="hero-float-chip__icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-cta-heart"/></svg>
+                                Contribution
+                            </div>
+                            <div class="hero-float-chip hero-float-delay-2 hero-float-pos-3">
+                                <svg class="hero-float-chip__icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-cta-party"/></svg>
+                                Birthday
+                            </div>
+                            <div class="hero-float-chip hero-float-delay-3 hero-float-pos-4">
+                                <svg class="hero-float-chip__icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-cta-rings"/></svg>
+                                Wedding Fund
+                            </div>
+                        </div>
+
+                        {# Central celebration card #}
+                        <article class="hero-board-card font-sans relative z-10 overflow-hidden rounded-2xl border border-white/80 bg-white/90 shadow-[0_16px_40px_rgba(34,34,34,0.08)] backdrop-blur-xl">
+                        <div class="flex items-center gap-1.5 border-b border-line/50 bg-[#faf9f6]/80 px-4 py-2">
+                            <span class="h-2 w-2 rounded-full bg-[#ff6b6b]"></span>
+                            <span class="h-2 w-2 rounded-full bg-secondary"></span>
+                            <span class="h-2 w-2 rounded-full bg-accent"></span>
+                            <span class="ml-auto text-[0.7rem] font-medium uppercase tracking-wider text-text/40">Live</span>
+                        </div>
+
+                        <div class="p-5">
+                            <div class="flex items-center gap-3">
+                                <!-- <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[#ff8a93] text-[0.65rem] font-bold text-white">SK</div> -->
+                                <div class="min-w-0">
+                                    <h2 class="mb-0 truncate font-sans text-base font-semibold text-text">Sarah's Birthday</h2>
+                                    <p class="mt-1 text-xs text-text/50">wishlist</p>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 rounded-lg border border-line/40 bg-background/50 px-3 py-2.5">
+                                <div class="mb-1.5 flex items-center justify-between gap-2">
+                                    <span class="truncate text-sm font-semibold text-text">Weekend Getaway</span>
+                                    <span class="shrink-0 text-xs font-bold text-primary">84%</span>
+                                </div>
+                                <p class="mb-2 text-xs text-text/50">KES 42,000 of 50,000</p>
+                                <div class="h-1.5 overflow-hidden rounded-full bg-[#ece8df]" role="progressbar" aria-valuenow="84" aria-valuemin="0" aria-valuemax="100" aria-label="Weekend Getaway progress">
+                                    <div class="hero-wishlist-bar h-full rounded-full bg-primary" style="--progress: 84%; animation-delay: 0.45s"></div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <p class="mb-2 text-[0.7rem] font-semibold uppercase tracking-wider text-text/45">Recent supporters</p>
+                                <ul class="space-y-1.5">
+                                    <li class="flex items-center gap-2.5 rounded-lg border border-line/40 bg-background/60 px-2.5 py-2 text-xs leading-tight text-text/75">
+                                        <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[0.6rem] font-bold text-primary">J</span>
+                                        <span> · <strong class="font-semibold text-text">KES 5,000</strong></span>
+                                    </li>
+                                    <li class="flex items-center gap-2.5 rounded-lg border border-line/40 bg-background/60 px-2.5 py-2 text-xs leading-tight text-text/75">
+                                        <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[0.6rem] font-bold text-accent">G</span>
+                                        <span> · <strong class="font-semibold text-text">KES 3,500</strong></span>
+                                    </li>
+                                    <li class="flex items-center gap-2.5 rounded-lg border border-line/40 bg-background/60 px-2.5 py-2 text-xs leading-tight text-text/75">
+                                        <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary/30 text-[0.6rem] font-bold text-text">B</span>
+                                        <span> · <strong class="font-semibold text-text">KES 2,000</strong></span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </article>
+                    </div>
+                </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    {# ── 2. How It Works ── #}
+    <section id="how-it-works" class="landing-section landing-steps" aria-labelledby="steps-heading">
+        <div class="landing-inner">
+            <header class="section-header reveal">
+                <!-- <p class="eyebrow">Simple &amp; delightful</p> -->
+                <h2 id="steps-heading"><span class="highlight">How</span> It Works</h2>
+                <!-- <p class="section-lead">Three steps from idea to celebration. No complicated setup — just a beautiful page your people will love to share.</p> -->
+            </header>
+
+            <div class="steps-flow">
+                <div class="steps-row">
+                    <article class="step-item reveal">
+                        <span class="step-index" aria-hidden="true">01</span>
+                        <h3>Create your page</h3>
+                        <p>Add a photo, story, and gift goals in minutes.</p>
+                    </article>
+
+                    <span class="step-bridge" aria-hidden="true"></span>
+
+                    <article class="step-item reveal reveal-delay">
+                        <span class="step-index" aria-hidden="true">02</span>
+                        <h3>Share with friends and family</h3>
+                        <p>Share one link on WhatsApp, social, or anywhere.</p>
+                    </article>
+
+                    <span class="step-bridge" aria-hidden="true"></span>
+
+                    <article class="step-item reveal reveal-delay-2">
+                        <span class="step-index" aria-hidden="true">03</span>
+                        <h3>Receive meaningful gifts</h3>
+                        <p>Receive secure contributions and warm messages.</p>
+                    </article>
+                </div>
+
+                <div class="step-tail reveal reveal-delay-3">
+                    <span class="step-bridge step-bridge--to-cta" aria-hidden="true">
+                        <span class="step-bridge__line"></span>
+                        <svg class="step-bridge__arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M12 5v14M12 19l-5-5M12 19l5-5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
+                    <div class="steps-cta">
+                        {% include "includes/landing_cta_primary.html" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# ── 3. About ── #}
+    <section id="about" class="landing-section landing-about" aria-labelledby="about-heading">
+        <div class="landing-inner landing-about-grid">
+            <div class="about-copy reveal">
+                <h2 id="about-heading">Built for <span class="highlight">moments</span> that matter</h2>
+                <p class="about-lead">GiftMe was built for emotional gifting moments. Instead of sharing plain payment links, you create celebration pages that feel personal and joyful.</p>
+                <p class="about-text">Whether it's a birthday, anniversary, graduation, or a surprise for someone you love — we help friends and family chip in simply, meaningfully, from anywhere.</p>
+            </div>
+
+            <figure class="about-visual reveal reveal-delay">
+                <div class="about-visual__frame">
+                    <img
+                        class="about-visual__img"
+                        src="{% static 'images/Story illustration.svg' %}"
+                        alt="Happy friends celebrating together"
+                        loading="lazy"
+                        width="800"
+                        height="800"
+                    >
+                </div>
+                <figcaption class="about-visual__credit">
+                    <a href="https://storyset.com/happy" target="_blank" rel="noopener noreferrer">Illustration by Storyset</a>
+                </figcaption>
+            </figure>
+        </div>
+    </section>
+
+
+    {# ── 4. Testimonials ── #}
+    <section id="testimonials" class="landing-section landing-testimonials" aria-labelledby="testimonials-heading">
+        <div class="landing-inner">
+            <header class="section-header reveal">
+                <h2 id="testimonials-heading">Don't take our word for it;&nbsp;<span class="highlight">listen in</span></h2>
+            </header>
+
+            <div class="testimonials-carousel" data-testimonials-carousel>
+                <button type="button" class="testimonials-carousel__btn" data-carousel-prev aria-label="Previous testimonial">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+
+                <div class="testimonials-carousel__main">
+                    <div class="testimonials-carousel__viewport" aria-live="polite" aria-atomic="true">
+                        <div class="testimonials-carousel__track">
+                            <blockquote class="testimonial-slide is-active" data-slide="0" aria-hidden="false">
+                                <p>&ldquo;We raised our honeymoon fund in a week. Easiest way our friends have ever chipped in.&rdquo;</p>
+                                <footer><cite>Wanjiku &amp; Nathan</cite></footer>
+                            </blockquote>
+                            <blockquote class="testimonial-slide" data-slide="1" aria-hidden="true">
+                                <p>&ldquo;My surprise birthday page blew me away — everyone chipped in, even family abroad.&rdquo;</p>
+                                <footer><cite>Daniel K.</cite></footer>
+                            </blockquote>
+                            <blockquote class="testimonial-slide" data-slide="2" aria-hidden="true">
+                                <p>&ldquo;Our baby shower page felt personal. Our people showed up in the best way.&rdquo;</p>
+                                <footer><cite>The Achieng Family</cite></footer>
+                            </blockquote>
+                        </div>
+                    </div>
+
+                    <div class="testimonials-carousel__meta">
+                        <div class="testimonials-carousel__dots" role="tablist" aria-label="Choose testimonial">
+                            <button type="button" class="testimonials-carousel__dot is-active" role="tab" aria-selected="true" aria-label="Testimonial 1" data-carousel-dot="0">1</button>
+                            <button type="button" class="testimonials-carousel__dot" role="tab" aria-selected="false" aria-label="Testimonial 2" data-carousel-dot="1">2</button>
+                            <button type="button" class="testimonials-carousel__dot" role="tab" aria-selected="false" aria-label="Testimonial 3" data-carousel-dot="2">3</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="testimonials-carousel__btn" data-carousel-next aria-label="Next testimonial">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </section>
+
+
+    {# ── 5. Contact ── #}
+    <section id="contact" class="landing-section landing-contact" aria-labelledby="contact-heading">
+        <div class="landing-inner">
+            <header class="section-header reveal">
+                <h2 id="contact-heading">Say <span class="highlight">hello</span></h2>
+            </header>
+            <ul class="contact-links reveal">
+                <li>
+                    <a href="https://instagram.com/giftme" target="_blank" rel="noopener noreferrer">
+                        <i class="fa-brands fa-instagram" aria-hidden="true"></i>
+                        Instagram
+                    </a>
+                </li>
+                <li>
+                    <a href="https://tiktok.com/@giftme" target="_blank" rel="noopener noreferrer">
+                        <i class="fa-brands fa-tiktok" aria-hidden="true"></i>
+                        TikTok
+                    </a>
+                </li>
+                <li>
+                    <a href="https://wa.me/254712345678" target="_blank" rel="noopener noreferrer">
+                        <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
+                        +254 712 345 678
+                    </a>
+                </li>
+                <li>
+                    <a href="mailto:hello@giftme.app">
+                        <i class="fa-solid fa-envelope" aria-hidden="true"></i>
+                        hello@giftme.app
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </section>
+
+    {# ── 6. Final CTA ── #}
+    <section class="landing-section landing-cta" aria-labelledby="cta-heading">
+        <div class="landing-inner">
+            <div class="cta-panel card reveal">
+                <h2 id="cta-heading">Ready to <span class="highlight">celebrate</span> louder?</h2>
+                <p>Create your first gift page in minutes. Share it with the people who matter most and watch the love come in.</p>
+                <div class="cta-actions cta-row cta-row--center">
+                    {% include "includes/landing_cta_primary.html" %}
+                    <a href="{% url 'home' %}#contact" class="cta-secondary">
+                        <svg class="cta-secondary__icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-cta-chat"/></svg>
+                        Talk to Us
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/testimonials-carousel.js' %}"></script>
 {% endblock %}

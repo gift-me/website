@@ -55,7 +55,6 @@
     cursor: pointer;
     text-decoration: none;
     border: 1px solid transparent;
-    transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
 }
 
 .dash-btn-sm {
@@ -64,24 +63,11 @@
 }
 
 .dash-btn-primary {
-    background: var(--red);
-    color: #fff;
     border-color: var(--red);
-}
-
-.dash-btn-primary:hover {
-    background: #cc2f3b;
-    box-shadow: 0 4px 14px rgba(230, 57, 70, 0.25);
 }
 
 .dash-btn-accent {
-    background: #fff;
-    color: var(--red);
     border-color: var(--red);
-}
-
-.dash-btn-accent:hover {
-    background: rgba(230, 57, 70, 0.06);
 }
 
 .dash-btn-ghost {
@@ -621,20 +607,7 @@ td {
 .dash-modal-form .dash-btn-primary,
 button.dash-btn-primary[type="submit"],
 .modal-submit-btn {
-    background: #E63946;
-    background-color: #E63946;
     border-color: #E63946;
-    color: #fff;
-}
-
-.modal-actions .dash-btn-primary:hover,
-.dash-modal-form .dash-btn-primary:hover,
-button.dash-btn-primary[type="submit"]:hover,
-.modal-submit-btn:hover {
-    background: #cc2f3b;
-    background-color: #cc2f3b;
-    border-color: #cc2f3b;
-    color: #fff;
 }
 
 .wishlist-item-row {

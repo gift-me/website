@@ -213,22 +213,13 @@
     border: 0;
     border-radius: 12px;
     padding: 0.8rem 1rem;
-    background: var(--red);
-    background-color: var(--red);
-    color: #fff;
     font-family: inherit;
     font-size: 1rem;
     font-weight: 600;
-    cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-}
-
-.gift-modal-submit:hover {
-    background: #cc2f3b;
-    background-color: #cc2f3b;
 }
 
 .gift-modal-error {

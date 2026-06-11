@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% block legal_title %}Legal{% endblock %} | GiftMe{% endblock %}
+{% block meta_description %}{% block legal_meta %}GiftMe legal information.{% endblock %}{% endblock %}
+{% block body_class %}is-landing{% endblock %}
+{% block main_classes %}landing-main{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+<link rel="stylesheet" href="{% static 'css/legal.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="legal-page">
+    <header class="legal-hero">
+        <div class="landing-inner">
+            <p class="eyebrow">{% block legal_eyebrow %}Legal{% endblock %}</p>
+            <h1>{% block legal_heading %}{% endblock %}</h1>
+            {% block legal_lead %}<p class="legal-lead">{% block legal_lead_text %}{% endblock %}</p>{% endblock %}
+            <p class="legal-meta">Last updated: <time datetime="{% block legal_updated_iso %}2026-06-10{% endblock %}">{% block legal_updated %}June 10, 2026{% endblock %}</time></p>
+        </div>
+    </header>
+
+    <div class="legal-body">
+        <div class="landing-inner">
+            <article class="legal-content">
+                {% block legal_content %}{% endblock %}
+            </article>
+
+            {% with url_name=request.resolver_match.url_name %}
+            <nav class="legal-related" aria-label="Related policies">
+                <p class="legal-related__label">Also read</p>
+                <ul class="legal-related__links">
+                    <li>
+                        <a href="{% url 'privacy' %}"{% if url_name == 'privacy' %} class="is-active" aria-current="page"{% endif %}>Privacy Policy</a>
+                    </li>
+                    <li>
+                        <a href="{% url 'terms' %}"{% if url_name == 'terms' %} class="is-active" aria-current="page"{% endif %}>Terms of Service</a>
+                    </li>
+                    <li>
+                        <a href="{% url 'accessibility' %}"{% if url_name == 'accessibility' %} class="is-active" aria-current="page"{% endif %}>Accessibility</a>
+                    </li>
+                </ul>
+            </nav>
+            {% endwith %}
+        </div>
+    </div>
+</div>
+{% endblock %}

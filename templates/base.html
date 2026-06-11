@@ -5,82 +5,77 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}GiftMe{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}GiftMe turns celebrations into beautiful public gift pages where friends and family contribute meaningful gifts. Gift better. Celebrate louder.{% endblock %}">
+    <link rel="icon" href="{% static 'images/favicon.svg' %}" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="{% static 'images/favicon.svg' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
+    <link href="https://api.fontshare.com/v2/css?f[]=clash-display@500,600,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/living-ink.css' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            corePlugins: { preflight: false },
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#E63946",
+                        secondary: "#F4D35E",
+                        accent: "#2A9D8F",
+                        background: "#FFFDF8",
+                        text: "#222222",
+                        line: "#E9E5DA",
+                    },
+                    fontFamily: {
+                        sans: ["Inter", "system-ui", "sans-serif"],
+                        display: ['"Clash Display"', "Inter", "system-ui", "sans-serif"],
+                    },
+                    boxShadow: {
+                        header: "0 1px 3px rgba(34, 34, 34, 0.04), 0 4px 24px rgba(34, 34, 34, 0.03)",
+                        cta: "0 1px 2px rgba(230, 57, 70, 0.2), 0 4px 14px rgba(230, 57, 70, 0.18)",
+                        "cta-hover": "0 4px 20px rgba(230, 57, 70, 0.28)",
+                    },
+                    transitionDuration: {
+                        250: "250ms",
+                    },
+                },
+            },
+        };
+    </script>
+    <link rel="stylesheet" href="{% static 'css/header.css' %}">
     {% block extra_css %}{% endblock %}
     {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body class="font-sans {% block body_class %}{% endblock %}{% with url_name=request.resolver_match.url_name %}{% if url_name != 'dashboard' and url_name != 'profile-setup' %} has-fixed-header{% endif %}{% endwith %}">
     {% include "includes/site_icons.html" %}
 
-    <header class="site-header">
-        <div class="container header-row{% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'profile-setup' %} header-row-compact{% endif %}">
-            <a href="{% url 'home' %}" class="brand"><i class="fa-solid fa-gift"></i> GiftMe</a>
-            {% if request.resolver_match.url_name != 'dashboard' and request.resolver_match.url_name != 'profile-setup' %}
-            <nav class="topnav">
-                <a href="{% url 'home' %}">Home</a>
-                <a href="{% url 'about' %}">About</a>
-                <a href="{% url 'contact' %}">Contact</a>
-            </nav>
-            {% endif %}
-            <div class="auth-links">
-                {% if user.is_authenticated %}
-                    {% if request.resolver_match.url_name != 'dashboard' and request.resolver_match.url_name != 'profile-setup' %}
-                    <a class="icon-btn" href="{% url 'dashboard' %}" aria-label="Dashboard" title="Dashboard">
-                        <svg aria-hidden="true"><use href="#icon-dashboard"/></svg>
-                    </a>
-                    {% endif %}
-                    {% if request.resolver_match.url_name != 'profile-setup' %}
-                    <a class="icon-btn" href="{% url 'profile-setup' %}" aria-label="Account settings" title="Account settings">
-                        <svg aria-hidden="true"><use href="#icon-settings"/></svg>
-                    </a>
-                    {% endif %}
-                    <a class="icon-btn icon-btn-primary" href="{% url 'account_logout' %}" aria-label="Logout" title="Logout">
-                        <svg aria-hidden="true"><use href="#icon-logout"/></svg>
-                    </a>
-                {% else %}
-                    <a class="icon-btn" href="{% url 'account_login' %}" aria-label="Login" title="Login">
-                        <svg aria-hidden="true"><use href="#icon-login"/></svg>
-                    </a>
-                    <a class="icon-btn icon-btn-primary" href="{% url 'account_signup' %}" aria-label="Sign up" title="Sign up">
-                        <svg aria-hidden="true"><use href="#icon-user-plus"/></svg>
-                    </a>
-                {% endif %}
-            </div>
-        </div>
-    </header>
+    {% block site_header %}
+    {% include "includes/header.html" %}
+    {% endblock %}
 
     <div id="toast-container" aria-live="polite"></div>
     {% for message in messages %}
     <span data-toast-message="{{ message }}" data-toast-type="{{ message.tags }}" hidden></span>
     {% endfor %}
 
-    <main class="container page-content">
+    <main class="{% block main_classes %}container page-content{% endblock %}">
         {% block content %}{% endblock %}
     </main>
 
     {% block site_footer %}
-    <footer class="site-footer">
-        <div class="container footer-row">
-            <div>
-                <h4>GiftMe</h4>
-                <p>Create beautiful birthday pages and receive gifts in a social way.</p>
-            </div>
-            <div class="footer-links">
-                <a href="{% url 'about' %}">About</a>
-                <a href="{% url 'contact' %}">Contact</a>
-                <a href="{% url 'privacy' %}">Privacy Policy</a>
-                <a href="{% url 'terms' %}">Terms of Service</a>
-            </div>
-        </div>
-    </footer>
+    {% include "includes/footer.html" %}
     {% endblock %}
 
     <script src="{% static 'js/toast.js' %}"></script>
+    <script src="{% static 'js/living-ink.js' %}"></script>
     <script src="{% static 'js/app.js' %}"></script>
+    {% with url_name=request.resolver_match.url_name %}{% if url_name != 'dashboard' and url_name != 'profile-setup' %}
+    <script src="{% static 'js/landing.js' %}"></script>
+    {% endif %}{% endwith %}
     {% block scripts %}{% endblock %}
 </body>
 </html>
