@@ -37,7 +37,8 @@ class CatalogGiftAdmin(admin.ModelAdmin):
     list_display = ("name", "amount", "is_active", "display_order", "created_at")
     list_editable = ("is_active", "display_order")
     list_filter = ("is_active",)
-    search_fields = ("name",)
+    search_fields = ("name", "description")
+    fields = ("name", "description", "amount", "image", "is_active", "display_order")
 
 
 @admin.register(BirthdayPage)

@@ -17,6 +17,7 @@ from .image_utils import compress_image_file
 
 class CatalogGift(models.Model):
     name = models.CharField(max_length=120)
+    description = models.CharField(max_length=200, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     image = models.ImageField(upload_to="gifts/catalog/")
     is_active = models.BooleanField(default=True)

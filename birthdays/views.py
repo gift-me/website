@@ -7,7 +7,16 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from .auth_views import profile_setup
-from .models import BirthdayPage, CatalogGift, GiftContribution, GiftOption, UserGiftReceived, UserProfile, WishlistItem, WithdrawalRequest
+from .models import (
+    BirthdayPage,
+    CatalogGift,
+    GiftContribution,
+    GiftOption,
+    UserGiftReceived,
+    UserProfile,
+    WishlistItem,
+    WithdrawalRequest,
+)
 
 
 DEFAULT_GIFT_OPTIONS = [
@@ -177,7 +186,19 @@ def _profile_display_username(profile):
 def user_gift_page(request, slug):
     profile = get_object_or_404(UserProfile, gift_slug=slug)
     display_username = _profile_display_username(profile)
+    display_name = profile.display_name or display_username
     gifts = CatalogGift.objects.filter(is_active=True)
+    recent_gifts = (
+        profile.gifts_received.select_related("catalog_gift")
+        .filter(payment__status="completed")
+        [:12]
+    )
+    today = timezone.now().date()
+    is_birthday_today = bool(
+        profile.birthday_date
+        and profile.birthday_date.month == today.month
+        and profile.birthday_date.day == today.day
+    )
 
     return render(
         request,
@@ -185,7 +206,10 @@ def user_gift_page(request, slug):
         {
             "profile": profile,
             "display_username": display_username,
+            "display_name": display_name,
             "gifts": gifts,
+            "recent_gifts": recent_gifts,
+            "is_birthday_today": is_birthday_today,
             "page_type": "gift",
             "page_slug": profile.gift_slug,
         },
@@ -195,7 +219,14 @@ def user_gift_page(request, slug):
 def user_wishlist_page(request, slug):
     profile = get_object_or_404(UserProfile, wishlist_slug=slug)
     display_username = _profile_display_username(profile)
+    display_name = profile.display_name or display_username
     items = profile.wishlist_items.all()
+    today = timezone.now().date()
+    is_birthday_today = bool(
+        profile.birthday_date
+        and profile.birthday_date.month == today.month
+        and profile.birthday_date.day == today.day
+    )
 
     return render(
         request,
@@ -203,7 +234,9 @@ def user_wishlist_page(request, slug):
         {
             "profile": profile,
             "display_username": display_username,
+            "display_name": display_name,
             "items": items,
+            "is_birthday_today": is_birthday_today,
             "page_type": "wishlist",
             "page_slug": profile.wishlist_slug,
         },

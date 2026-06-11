@@ -13,9 +13,10 @@
     {% block extra_css %}{% endblock %}
     {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
     {% include "includes/site_icons.html" %}
 
+    {% block site_header %}
     <header class="site-header">
         <div class="container header-row{% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'profile-setup' %} header-row-compact{% endif %}">
             <a href="{% url 'home' %}" class="brand"><i class="fa-solid fa-gift"></i> GiftMe</a>
@@ -52,13 +53,14 @@
             </div>
         </div>
     </header>
+    {% endblock %}
 
     <div id="toast-container" aria-live="polite"></div>
     {% for message in messages %}
     <span data-toast-message="{{ message }}" data-toast-type="{{ message.tags }}" hidden></span>
     {% endfor %}
 
-    <main class="container page-content">
+    <main class="{% block main_class %}container page-content{% endblock %}">
         {% block content %}{% endblock %}
     </main>
 
