@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+from decimal import Decimal
 from pathlib import Path
 import os
 
@@ -27,12 +28,16 @@ except ImportError:
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-!wqo72-*lsuvau8a#hgy_00_oacv+xz-+&hpyo9ae47s8dytsx'
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY",
+    "django-insecure-!wqo72-*lsuvau8a#hgy_00_oacv+xz-+&hpyo9ae47s8dytsx",
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "True").lower() in ("true", "1", "yes")
 
-ALLOWED_HOSTS = ['*',]
+_allowed_hosts_raw = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1")
+ALLOWED_HOSTS = [host.strip() for host in _allowed_hosts_raw.split(",") if host.strip()]
 
 
 # Application definition
@@ -48,6 +53,7 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'birthdays.apps.BirthdaysConfig',
+    'ops.apps.OpsConfig',
 ]
 
 MIDDLEWARE = [
@@ -73,6 +79,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'ops.context_processors.ops_stats',
+                'birthdays.context_processors.site_settings',
             ],
         },
     },
@@ -160,3 +168,36 @@ MPESA_SHORTCODE = os.environ.get("MPESA_SHORTCODE", "")
 MPESA_PASSKEY = os.environ.get("MPESA_PASSKEY", "")
 MPESA_CALLBACK_URL = os.environ.get("MPESA_CALLBACK_URL", "")
 MPESA_TRANSACTION_TYPE = os.environ.get("MPESA_TRANSACTION_TYPE", "CustomerPayBillOnline")
+
+# Redis cache (optional — falls back to local memory)
+REDIS_URL = os.environ.get("REDIS_URL", "")
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "IGNORE_EXCEPTIONS": True,
+            },
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
+
+STK_QUERY_MIN_AGE_SECONDS = int(os.environ.get("STK_QUERY_MIN_AGE_SECONDS", "25"))
+STK_IP_LIMIT = int(os.environ.get("STK_IP_LIMIT", "10"))
+STK_IP_WINDOW = int(os.environ.get("STK_IP_WINDOW", "60"))
+STK_PHONE_LIMIT = int(os.environ.get("STK_PHONE_LIMIT", "5"))
+STK_PHONE_WINDOW = int(os.environ.get("STK_PHONE_WINDOW", "3600"))
+STK_MAX_PENDING_PER_PHONE_PROFILE = int(os.environ.get("STK_MAX_PENDING_PER_PHONE_PROFILE", "3"))
+STK_PROFILE_LIMIT = int(os.environ.get("STK_PROFILE_LIMIT", "100"))
+STK_PROFILE_WINDOW = int(os.environ.get("STK_PROFILE_WINDOW", "3600"))
+PAYMENT_PENDING_EXPIRY_MINUTES = int(os.environ.get("PAYMENT_PENDING_EXPIRY_MINUTES", "15"))
+
+PLATFORM_FEE_PERCENT = Decimal(os.environ.get("PLATFORM_FEE_PERCENT", "10"))
+PLATFORM_FEE_CAP = Decimal(os.environ.get("PLATFORM_FEE_CAP", "800"))

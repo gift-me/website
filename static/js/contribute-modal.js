@@ -18,11 +18,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const submitLabel = document.getElementById("contrib-submit-label");
     const submitIcon = document.getElementById("contrib-submit-icon");
     const whatsappLink = document.getElementById("contrib-whatsapp-share");
+    const loadingSteps = document.getElementById("contrib-loading-steps");
 
     const pageType = modal.dataset.pageType || "gift";
     const pageSlug = modal.dataset.pageSlug || "";
     const defaultSubmitLabel = pageType === "wishlist" ? "Fulfill my wish" : "Gift";
     let pollTimer = null;
+    let loadingStepTimer = null;
+    let idempotencyKey = "";
+
+    function newIdempotencyKey() {
+        if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+        return `giftme-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
 
     function getCsrfToken() {
         const input = form?.querySelector("[name=csrfmiddlewaretoken]");
@@ -48,17 +56,49 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    function stopLoadingSteps() {
+        if (loadingStepTimer) {
+            window.clearInterval(loadingStepTimer);
+            loadingStepTimer = null;
+        }
+    }
+
+    function setLoadingStep(step) {
+        if (!loadingSteps) return;
+        const items = loadingSteps.querySelectorAll("li");
+        const order = ["stk", "wait", "confirm"];
+        const activeIndex = order.indexOf(step);
+        items.forEach((item, index) => {
+            item.classList.remove("is-active", "is-done");
+            if (index < activeIndex) item.classList.add("is-done");
+            if (index === activeIndex) item.classList.add("is-active");
+        });
+    }
+
+    function startLoadingSteps() {
+        stopLoadingSteps();
+        setLoadingStep("stk");
+        let tick = 0;
+        loadingStepTimer = window.setInterval(() => {
+            tick += 1;
+            if (tick === 1) setLoadingStep("wait");
+            else if (tick >= 2) setLoadingStep("confirm");
+        }, 4500);
+    }
+
     function stopPolling() {
         if (pollTimer) {
             window.clearInterval(pollTimer);
             pollTimer = null;
         }
+        stopLoadingSteps();
     }
 
     function openModal(config) {
         stopPolling();
         showState("form");
         showError("");
+        idempotencyKey = newIdempotencyKey();
 
         if (giftIdInput) giftIdInput.value = config.giftId || "";
         if (wishlistIdInput) wishlistIdInput.value = config.wishlistId || "";
@@ -155,6 +195,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         showState("loading");
+        startLoadingSteps();
 
         try {
             const res = await fetch("/api/mpesa/stk-push/", {
@@ -163,8 +204,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     "Content-Type": "application/json",
                     "X-CSRFToken": getCsrfToken(),
                     "X-Requested-With": "XMLHttpRequest",
+                    "Idempotency-Key": idempotencyKey,
                 },
-                body: JSON.stringify(payload),
+                body: JSON.stringify({ ...payload, idempotency_key: idempotencyKey }),
             });
             const data = await res.json();
 

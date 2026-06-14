@@ -44,10 +44,23 @@
             </form>
         </div>
 
-        <div id="contrib-state-loading" class="contrib-state-panel" hidden>
-            <div class="contrib-spinner" aria-hidden="true"></div>
+        <div id="contrib-state-loading" class="contrib-state-panel contrib-state-loading" hidden>
+            <div class="contrib-loading-visual" aria-hidden="true">
+                <div class="contrib-phone-pulse">
+                    <i class="fa-solid fa-mobile-screen-button"></i>
+                    <span class="contrib-pulse-ring"></span>
+                    <span class="contrib-pulse-ring contrib-pulse-ring-2"></span>
+                </div>
+                <div class="contrib-mpesa-badge">M-PESA</div>
+            </div>
             <h2>Check your phone</h2>
-            <p>M-Pesa STK prompt sent. Enter your PIN to complete payment.</p>
+            <p class="contrib-loading-hint">Enter your PIN on the STK prompt to complete payment.</p>
+            <ul class="contrib-loading-steps" id="contrib-loading-steps">
+                <li class="is-active" data-step="stk">Sending STK push</li>
+                <li data-step="wait">Waiting for M-Pesa</li>
+                <li data-step="confirm">Confirming payment</li>
+            </ul>
+            <div class="contrib-loading-bar"><span class="contrib-loading-bar-fill"></span></div>
         </div>
 
         <div id="contrib-state-success" class="contrib-state-panel" hidden>

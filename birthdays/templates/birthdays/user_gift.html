@@ -1,110 +1,156 @@
-{% extends "base.html" %}
-{% load static %}
-{% block title %}Send a gift to {{ display_name }} | GiftMe{% endblock %}
-{% block body_class %}gift-page-body{% endblock %}
-{% block main_class %}gift-page-main{% endblock %}
-{% block site_header %}{% endblock %}
-{% block site_footer %}{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'css/gift-page.css' %}">{% endblock %}
-{% block content %}
-<div class="gift-page">
-    <div class="gift-hero-sticky">
-        <div class="gift-hero-card">
-            <div class="gift-hero-mesh" aria-hidden="true">
-                <span class="gift-mesh-blob gift-mesh-blob-1"></span>
-                <span class="gift-mesh-blob gift-mesh-blob-2"></span>
-                <span class="gift-mesh-blob gift-mesh-blob-3"></span>
-            </div>
-            <canvas class="gift-bg-canvas" data-gift-bg="hero" aria-hidden="true"></canvas>
-            <div class="gift-hero-profile">
-                {% if profile.profile_picture %}
-                <img class="gift-hero-avatar" src="{{ profile.profile_picture.url }}" alt="">
-                {% else %}
-                <span class="gift-hero-avatar gift-hero-avatar-placeholder" aria-hidden="true">
-                    <i class="fa-solid fa-user"></i>
-                </span>
-                {% endif %}
-                <div class="gift-hero-info">
-                    <p class="gift-hero-label">You are gifting</p>
-                    <p class="gift-hero-username">
-                        <span>@{{ display_username }}</span>
-                        {% include "birthdays/includes/verified_badge.html" %}
-                    </p>
-                    {% if is_birthday_today %}
-                    <p class="gift-hero-badge"><i class="fa-solid fa-cake-candles"></i> It's their birthday!</p>
-                    {% endif %}
-                    <p class="gift-hero-tagline">Join others in celebrating them</p>
-                </div>
-            </div>
-            <div class="gift-hero-action">
-                <button type="button" class="gift-custom-btn" id="open-custom-gift" title="Buy custom gift">
-                    <i class="fa-solid fa-gift gift-custom-btn-icon" aria-hidden="true"></i>
-                    <span class="gift-custom-btn-text">Buy custom gift</span>
-                    <span class="gift-custom-btn-text-mobile">Custom gift</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div class="gift-page-body-content gift-page-body-content--animated">
-        <canvas class="gift-bg-canvas gift-section-canvas" data-gift-bg="catalog" aria-hidden="true"></canvas>
-        <section class="gift-catalog-section">
-            <h2>Choose a gift</h2>
-            <div class="gift-catalog-grid">
-                {% for gift in gifts %}
-                <button type="button" class="gift-card" data-gift-id="{{ gift.id }}" data-gift-name="{{ gift.name }}" data-gift-amount="{{ gift.amount|floatformat:0 }}" title="{{ gift.name }}">
-                    <div class="gift-card-image">
-                        {% if gift.image %}
-                        <img src="{{ gift.image.url }}" alt="{{ gift.name }}">
-                        {% else %}
-                        <span class="gift-card-fallback"><i class="fa-solid fa-gift"></i></span>
-                        {% endif %}
-                    </div>
-                    <div class="gift-card-body">
-                        <h3 class="gift-card-name">{{ gift.name }}</h3>
-                        {% if gift.description %}
-                        <p class="gift-card-desc">{{ gift.description }}</p>
-                        {% endif %}
-                        <p class="gift-card-amount">KES {{ gift.amount|floatformat:0 }}</p>
-                    </div>
-                </button>
-                {% empty %}
-                <p class="gift-empty">Gifts coming soon. Check back shortly.</p>
-                {% endfor %}
-            </div>
-        </section>
-
-        {% if recent_gifts %}
-        <section class="gift-recent-section">
-            <h2>Recent gifts</h2>
-            <ul class="gift-recent-list">
-                {% for gift in recent_gifts %}
-                <li class="gift-recent-item">
-                    <div class="gift-recent-icon">
-                        {% if gift.catalog_gift and gift.catalog_gift.image %}
-                        <img src="{{ gift.catalog_gift.image.url }}" alt="">
-                        {% else %}
-                        <i class="fa-solid fa-gift"></i>
-                        {% endif %}
-                    </div>
-                    <div class="gift-recent-meta">
-                        <strong>{{ gift.display_sender }}</strong>
-                        <span>sent {{ gift.gift_label }}</span>
-                        <small>{{ gift.created_at|timesince }} ago</small>
-                    </div>
-                    <span class="gift-recent-amount">KES {{ gift.amount|floatformat:0 }}</span>
-                </li>
-                {% endfor %}
-            </ul>
-        </section>
-        {% endif %}
-    </div>
-</div>
-
-{% include "birthdays/includes/contribute_modal.html" %}
-{% endblock %}
-{% block scripts %}
-<script src="{% static 'js/gift-bg-animation.js' %}"></script>
-<script src="{% static 'js/contribute-modal.js' %}"></script>
-<script src="{% static 'js/gift-page.js' %}"></script>
-{% endblock %}
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}Send a gift to {{ display_name }} | GiftMe{% endblock %}
+
+{% block body_class %}gift-page-body has-fixed-header{% endblock %}
+
+{% block main_class %}gift-page-main{% endblock %}
+
+
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/gift-page.css' %}">{% endblock %}
+
+{% block content %}
+
+<div class="gift-page">
+
+    <div class="gift-hero-sticky">
+
+        <div class="gift-hero-card">
+            <div class="gift-hero-profile">
+
+                {% if profile.profile_picture %}
+
+                <img class="gift-hero-avatar" src="{{ profile.profile_picture.url }}" alt="">
+
+                {% else %}
+
+                <span class="gift-hero-avatar gift-hero-avatar-placeholder" aria-hidden="true">
+
+                    <i class="fa-solid fa-user"></i>
+
+                </span>
+
+                {% endif %}
+
+                <div class="gift-hero-info">
+
+                    <p class="gift-hero-label">You are gifting</p>
+
+                    <p class="gift-hero-username">
+
+                        <span>@{{ display_username }}</span>
+
+                        {% include "birthdays/includes/verified_badge.html" %}
+
+                    </p>
+
+                    {% if is_birthday_today %}
+
+                    <p class="gift-hero-badge"><i class="fa-solid fa-cake-candles"></i> It's their birthday!</p>
+
+                    {% endif %}
+
+                    <p class="gift-hero-tagline">Join others in celebrating them</p>
+
+                </div>
+
+            </div>
+
+            <div class="gift-hero-action">
+
+                <button type="button" class="gift-custom-btn" id="open-custom-gift" title="Buy custom gift">
+
+                    <i class="fa-solid fa-gift gift-custom-btn-icon" aria-hidden="true"></i>
+
+                    <span class="gift-custom-btn-text">Buy custom gift</span>
+
+                    <span class="gift-custom-btn-text-mobile">Custom gift</span>
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="gift-page-body-content gift-page-body-content--animated">
+
+        <canvas class="gift-bg-canvas gift-section-canvas" data-gift-bg="catalog" aria-hidden="true"></canvas>
+
+        <section class="gift-catalog-section">
+
+            <h2>Choose a gift</h2>
+
+            <div class="gift-catalog-grid">
+
+                {% for gift in gifts %}
+
+                <button type="button" class="gift-card" data-gift-id="{{ gift.id }}" data-gift-name="{{ gift.name }}" data-gift-amount="{{ gift.amount|floatformat:0 }}" title="{{ gift.name }}">
+
+                    <div class="gift-card-image">
+
+                        {% if gift.image %}
+
+                        <img src="{{ gift.image.url }}" alt="{{ gift.name }}">
+
+                        {% else %}
+
+                        <span class="gift-card-fallback"><i class="fa-solid fa-gift"></i></span>
+
+                        {% endif %}
+
+                    </div>
+
+                    <div class="gift-card-body">
+
+                        <h3 class="gift-card-name">{{ gift.name }}</h3>
+
+                        {% if gift.description %}
+
+                        <p class="gift-card-desc">{{ gift.description }}</p>
+
+                        {% endif %}
+
+                        <p class="gift-card-amount">KES {{ gift.amount|floatformat:0 }}</p>
+
+                    </div>
+
+                </button>
+
+                {% empty %}
+
+                <p class="gift-empty">Gifts coming soon. Check back shortly.</p>
+
+                {% endfor %}
+
+            </div>
+
+        </section>
+
+        {% include "birthdays/includes/top_gifters.html" %}
+
+    </div>
+
+</div>
+
+
+
+{% include "birthdays/includes/contribute_modal.html" %}
+
+{% endblock %}
+
+{% block scripts %}
+
+<script src="{% static 'js/gift-bg-animation.js' %}"></script>
+
+<script src="{% static 'js/contribute-modal.js' %}"></script>
+
+<script src="{% static 'js/gift-page.js' %}"></script>
+
+{% endblock %}
+

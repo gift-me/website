@@ -15,7 +15,6 @@ import requests
 from django.conf import settings
 
 from .conversions import whole_number
-from .debug_print import debug_print
 from .exceptions import MpesaError
 
 logger = logging.getLogger(__name__)
@@ -121,10 +120,16 @@ class MpesaClient:
         }
 
     def get_access_token(self):
+        from .safe_cache import cache_get, cache_set
+
+        cached = cache_get("daraja:oauth_token")
+        if cached:
+            return cached
+
         if not self.consumer_key or not self.consumer_secret:
             raise MpesaError("MPESA_CONSUMER_KEY and MPESA_CONSUMER_SECRET are required.")
 
-        debug_print("[MPESA_OAUTH_REQUEST]", "env=", settings.MPESA_ENV, "base_url=", self.base_url)
+        logger.debug("[MPESA_OAUTH_REQUEST] env=%s base_url=%s", settings.MPESA_ENV, self.base_url)
         url = f"{self.base_url}/oauth/v1/generate?grant_type=client_credentials"
         response = requests.get(
             url,
@@ -137,12 +142,14 @@ class MpesaClient:
             raise MpesaError("Invalid OAuth response from Daraja.", response.text) from exc
 
         if response.status_code != 200 or "access_token" not in data:
-            debug_print("[MPESA_OAUTH_ERROR]", "status=", response.status_code, "data=", data)
+            logger.debug("[MPESA_OAUTH_ERROR] status=%s data=%s", response.status_code, data)
             raise MpesaError(
                 data.get("errorMessage") or data.get("error") or "Failed to obtain M-Pesa access token.",
                 data,
             )
-        return data["access_token"]
+        token = data["access_token"]
+        cache_set("daraja:oauth_token", token, timeout=3300)
+        return token
 
     def _password_payload(self, timestamp):
         raw = f"{self.shortcode}{self.passkey}{timestamp}"
@@ -161,15 +168,11 @@ class MpesaClient:
 
         amount = _parse_whole_kes_amount(amount)
         phone = normalize_phone(phone)
-        debug_print(
-            "[MPESA_STK_REQUEST]",
-            "callback=",
+        logger.debug(
+            "[MPESA_STK_REQUEST] callback=%s shortcode=%s phone=%s amount=%s",
             self.callback_url,
-            "shortcode=",
             self.shortcode,
-            "phone=",
             phone,
-            "amount=",
             amount,
         )
         access_token = self.get_access_token()
@@ -203,14 +206,14 @@ class MpesaClient:
             raise MpesaError("Invalid STK Push response from Daraja.", response.text) from exc
 
         if response.status_code != 200:
-            debug_print("[MPESA_STK_HTTP_ERROR]", "status=", response.status_code, "data=", data)
+            logger.debug("[MPESA_STK_HTTP_ERROR] status=%s data=%s", response.status_code, data)
             raise MpesaError(
                 data.get("errorMessage") or data.get("error") or "STK Push request failed.",
                 data,
             )
 
         if f"{data.get('ResponseCode', '')}" != "0":
-            debug_print("[MPESA_STK_REJECTED]", data)
+            logger.debug("[MPESA_STK_REJECTED] %s", data)
             raise MpesaError(
                 data.get("ResponseDescription") or data.get("CustomerMessage") or "STK Push rejected.",
                 data,
@@ -244,7 +247,7 @@ class MpesaClient:
             raise MpesaError("Invalid STK Query response from Daraja.", response.text) from exc
 
         if response.status_code != 200 or f"{data.get('ResponseCode', '')}" != "0":
-            debug_print("[MPESA_STK_QUERY_FAILED]", data)
+            logger.debug("[MPESA_STK_QUERY_FAILED] %s", data)
             raise MpesaError(
                 data.get("errorMessage")
                 or data.get("error")

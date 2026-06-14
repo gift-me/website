@@ -76,6 +76,7 @@
     background: var(--gift-primary);
     border-radius: 999px;
     min-width: 2px;
+    width: 0;
     transition: width 0.3s ease;
 }
 

@@ -1,0 +1,116 @@
+{% extends "ops/base.html" %}
+{% load static ops_format %}
+{% block ops_heading %}Overview{% endblock %}
+{% block ops_content %}
+<div class="ops-kpi-grid">
+    <article class="ops-kpi ops-kpi-mint">
+        <div class="ops-kpi-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.8"/></svg>
+        </div>
+        <div class="ops-kpi-body">
+            <strong>{{ stats.total_users }}</strong>
+            <span>Total users</span>
+        </div>
+    </article>
+    <article class="ops-kpi ops-kpi-red">
+        <div class="ops-kpi-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l4-4m-4 4l-4-4M4 19h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <div class="ops-kpi-body">
+            <strong>KES {{ stats.total_deposits|kes }}</strong>
+            <span>Total deposits</span>
+        </div>
+    </article>
+    <article class="ops-kpi ops-kpi-gold">
+        <div class="ops-kpi-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M20 7h-3V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v2a9 9 0 0 0 9 9 9 9 0 0 0 9-9V8a1 1 0 0 0-1-1z" stroke="currentColor" stroke-width="1.8"/></svg>
+        </div>
+        <div class="ops-kpi-body">
+            <strong>{{ stats.total_payments }}</strong>
+            <span>Completed payments</span>
+        </div>
+    </article>
+    <article class="ops-kpi ops-kpi-teal">
+        <div class="ops-kpi-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <div class="ops-kpi-body">
+            <strong>KES {{ stats.house_profit|kes }}</strong>
+            <span>House profit</span>
+        </div>
+    </article>
+    <article class="ops-kpi ops-kpi-mint">
+        <div class="ops-kpi-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M2 10h20" stroke="currentColor" stroke-width="1.8"/></svg>
+        </div>
+        <div class="ops-kpi-body">
+            <strong>KES {{ stats.available_house_profit|kes }}</strong>
+            <span>Available house profit</span>
+        </div>
+    </article>
+    <article class="ops-kpi ops-kpi-red">
+        <div class="ops-kpi-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4M3 5v14a2 2 0 0 0 2 2h16v-5M18 12a2 2 0 0 0 0 4h4v-4h-4z" stroke="currentColor" stroke-width="1.8"/></svg>
+        </div>
+        <div class="ops-kpi-body">
+            <strong>KES {{ stats.estimated_mpesa_balance|kes }}</strong>
+            <span>Est. M-Pesa balance</span>
+        </div>
+    </article>
+    <article class="ops-kpi ops-kpi-gold">
+        <div class="ops-kpi-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 21V9m0 0l4 4m-4-4l-4 4M4 5h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <div class="ops-kpi-body">
+            <strong>KES {{ stats.user_withdrawals_gross|kes }}</strong>
+            <span>User withdrawals</span>
+        </div>
+    </article>
+    <article class="ops-kpi ops-kpi-teal">
+        <div class="ops-kpi-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M3 21h18M5 21V9l7-4 7 4v12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <div class="ops-kpi-body">
+            <strong>KES {{ stats.house_withdrawals_gross|kes }}</strong>
+            <span>House withdrawals</span>
+        </div>
+    </article>
+</div>
+
+{{ revenue_chart|json_script:"ops-revenue-data" }}
+{{ gifts_7d_chart|json_script:"ops-gifts-data" }}
+{{ status_chart|json_script:"ops-status-data" }}
+{{ breakdown_chart|json_script:"ops-breakdown-data" }}
+
+<div class="ops-charts-grid">
+    <section class="ops-panel ops-chart-panel">
+        <h2>Revenue trend (30 days)</h2>
+        <div class="ops-chart-wrap">
+            <canvas id="ops-revenue-chart"></canvas>
+        </div>
+    </section>
+    <section class="ops-panel ops-chart-panel">
+        <h2>Gifts received (last 7 days)</h2>
+        <div class="ops-chart-wrap">
+            <canvas id="ops-gifts-chart"></canvas>
+        </div>
+    </section>
+    <section class="ops-panel ops-chart-panel">
+        <h2>Payment status</h2>
+        <div class="ops-chart-wrap ops-chart-wrap-pie">
+            <canvas id="ops-status-chart"></canvas>
+        </div>
+    </section>
+    <section class="ops-panel ops-chart-panel">
+        <h2>Revenue breakdown</h2>
+        <div class="ops-chart-wrap ops-chart-wrap-pie">
+            <canvas id="ops-breakdown-chart"></canvas>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block ops_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{% static 'js/ops-charts.js' %}"></script>
+{% endblock %}

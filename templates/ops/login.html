@@ -1,0 +1,14 @@
+{% extends "ops/base.html" %}
+{% block ops_title %}Login{% endblock %}
+{% block ops_content %}
+<section class="ops-login-card">
+    <h2>Staff login</h2>
+    <p>Only staff accounts can access the operations dashboard.</p>
+    <form method="post" action="{% url 'ops-login-submit' %}">
+        {% csrf_token %}
+        <label>Username<input type="text" name="username" required autofocus></label>
+        <label>Password<input type="password" name="password" required></label>
+        <button type="submit" class="ops-btn-primary">Sign in</button>
+    </form>
+</section>
+{% endblock %}

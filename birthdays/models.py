@@ -74,7 +74,7 @@ class BirthdayPage(models.Model):
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return reverse("birthday-detail", kwargs={"slug": self.slug})
+        return reverse("home")
 
     @property
     def countdown_seconds(self):
@@ -171,6 +171,7 @@ class WithdrawalRequest(models.Model):
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     payout_phone = models.CharField(max_length=20, blank=True)
+    mpesa_withdrawal_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     note = models.CharField(max_length=180, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -208,17 +209,21 @@ class UserProfile(models.Model):
 
     @property
     def total_raised(self):
-        return self.gifts_received.aggregate(total=models.Sum("amount"))["total"] or 0
+        return self.gifts_received.aggregate(total=models.Sum("net_amount"))["total"] or 0
 
     @property
     def total_withdrawn(self):
-        return self.withdrawals.filter(status=WithdrawalRequest.Status.APPROVED).aggregate(
-            total=models.Sum("amount")
-        )["total"] or 0
+        approved = self.withdrawals.filter(status=WithdrawalRequest.Status.APPROVED)
+        gross = approved.aggregate(total=models.Sum("amount"))["total"] or 0
+        fees = approved.aggregate(total=models.Sum("mpesa_withdrawal_fee"))["total"] or 0
+        return gross + fees
 
     @property
     def available_balance(self):
-        return self.total_raised - self.total_withdrawn
+        pending = self.withdrawals.filter(status=WithdrawalRequest.Status.PENDING).aggregate(
+            total=models.Sum("amount")
+        )["total"] or 0
+        return self.total_raised - self.total_withdrawn - pending
 
     @property
     def gifts_count(self):
@@ -244,6 +249,8 @@ class UserGiftReceived(models.Model):
     gift_label = models.CharField(max_length=120, default="Gift")
     message = models.CharField(max_length=220, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    net_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    platform_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     is_anonymous = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -255,6 +262,14 @@ class UserGiftReceived(models.Model):
         if self.is_anonymous or not self.sender_name.strip():
             return "Anonymous"
         return self.sender_name
+
+    @property
+    def display_gift_label(self):
+        if self.catalog_gift_id:
+            return self.catalog_gift.name if self.catalog_gift else self.gift_label
+        if self.wishlist_item_id:
+            return self.gift_label
+        return "Custom"
 
 
 class WishlistItem(models.Model):
@@ -270,8 +285,10 @@ class WishlistItem(models.Model):
 
     @property
     def raised_amount(self):
-        total = self.contributions.aggregate(total=models.Sum("amount"))["total"]
-        return total or 0
+        total = self.contributions.aggregate(total=models.Sum("net_amount"))["total"]
+        if total:
+            return total
+        return self.contributions.aggregate(total=models.Sum("amount"))["total"] or 0
 
     @property
     def progress_percent(self):
@@ -301,12 +318,16 @@ class MpesaPayment(models.Model):
     payer_phone = models.CharField(max_length=20)
     message = models.CharField(max_length=220, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    platform_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    net_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    mpesa_deposit_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     gift_label = models.CharField(max_length=120, default="Gift")
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     account_reference = models.CharField(max_length=12, unique=True)
+    idempotency_key = models.CharField(max_length=64, blank=True, db_index=True)
     checkout_request_id = models.CharField(max_length=64, blank=True, db_index=True)
     merchant_request_id = models.CharField(max_length=64, blank=True)
-    mpesa_receipt = models.CharField(max_length=32, blank=True)
+    mpesa_receipt = models.CharField(max_length=32, blank=True, db_index=True)
     result_desc = models.CharField(max_length=255, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -316,3 +337,75 @@ class MpesaPayment(models.Model):
 
     def __str__(self):
         return f"{self.account_reference} ({self.status})"
+
+
+class PaymentAttempt(models.Model):
+    idempotency_key = models.CharField(max_length=64, unique=True, db_index=True)
+    payment = models.ForeignKey(MpesaPayment, on_delete=models.CASCADE, related_name="attempts")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.idempotency_key
+
+
+class HouseWithdrawal(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    payout_phone = models.CharField(max_length=20)
+    mpesa_withdrawal_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    note = models.CharField(max_length=180, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="house_withdrawals"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    @property
+    def total_debit(self):
+        return self.amount + self.mpesa_withdrawal_fee
+
+    def __str__(self):
+        return f"House withdrawal KES {self.amount} ({self.status})"
+
+
+class SiteSettings(models.Model):
+    contact_email = models.EmailField(blank=True)
+    contact_phone = models.CharField(max_length=30, blank=True)
+    facebook_url = models.URLField(blank=True)
+    tiktok_url = models.URLField(blank=True)
+    instagram_url = models.URLField(blank=True)
+    website_url = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Public site URL shown on QR downloads (e.g. giftme.co). No https:// needed.",
+    )
+    logo = models.ImageField(upload_to="site/", blank=True, null=True)
+    favicon = models.ImageField(upload_to="site/", blank=True, null=True)
+    platform_fee_percent = models.DecimalField(max_digits=5, decimal_places=2, default=10)
+    platform_fee_cap = models.DecimalField(max_digits=10, decimal_places=2, default=800)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = "Site settings"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        pass
+
+    @classmethod
+    def load(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+    def __str__(self):
+        return "Site settings"

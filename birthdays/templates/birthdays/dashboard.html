@@ -10,6 +10,8 @@
 
 <div class="dash">
 
+    <div id="qr-poster-config" hidden data-logo-url="{{ poster_logo_url }}" data-site-url="{{ site_display_url }}"></div>
+
     {% if profile_incomplete %}
 
     <div class="dash-notice" id="profile-notice">
@@ -98,6 +100,12 @@
 
                 </button>
 
+                <button type="button" class="dash-share-wa" data-share-url="{{ gift_url }}" data-share-type="gift" data-display-name="{{ display_name }}" data-is-birthday="{% if is_birthday_today %}1{% else %}0{% endif %}" aria-label="Share gifting link on WhatsApp" title="Share on WhatsApp">
+
+                    <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
+
+                </button>
+
             </div>
 
             <a class="dash-link-preview" href="{{ gift_url }}" target="_blank" rel="noopener">Preview gifting page</a>
@@ -124,6 +132,12 @@
 
                 </button>
 
+                <button type="button" class="dash-share-wa" data-share-url="{{ wishlist_url }}" data-share-type="wishlist" data-display-name="{{ display_name }}" aria-label="Share wishlist link on WhatsApp" title="Share on WhatsApp">
+
+                    <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
+
+                </button>
+
             </div>
 
             <a class="dash-link-preview" href="{{ wishlist_url }}" target="_blank" rel="noopener">Preview wishlist</a>
@@ -144,7 +158,7 @@
 
                 <span>Current Balance</span>
 
-                <strong>KES {{ available_balance }}</strong>
+                <strong>KES {{ available_balance|floatformat:2 }}</strong>
 
                 <small>Ready to withdraw</small>
 
@@ -160,7 +174,7 @@
 
                 <span>Total Earned</span>
 
-                <strong>KES {{ total_revenue }}</strong>
+                <strong>KES {{ total_revenue|floatformat:2 }}</strong>
 
                 <small>All gifts received</small>
 
@@ -224,7 +238,7 @@
 
                     <thead>
 
-                        <tr><th>Name</th><th>Gift</th><th>Message</th><th>Date</th><th>Amount</th></tr>
+                        <tr><th>Name</th><th>Gift</th><th>Message</th><th>Amount</th><th class="th-actions"></th></tr>
 
                     </thead>
 
@@ -236,13 +250,31 @@
 
                             <td>{{ s.display_sender }}</td>
 
-                            <td><span class="pill">{{ s.gift_label }}</span></td>
+                            <td><span class="pill">{{ s.display_gift_label }}</span></td>
 
-                            <td>{{ s.message|default:"-" }}</td>
+                            <td class="gift-msg-cell" title="{{ s.message }}">{% if s.message %}{{ s.message|truncatechars:42 }}{% else %}—{% endif %}</td>
 
-                            <td>{{ s.created_at|date:"d M Y, h:i A" }}</td>
+                            <td class="amount">KES {{ s.amount|floatformat:2 }}</td>
 
-                            <td class="amount">KES {{ s.amount }}</td>
+                            <td class="td-actions">
+
+                                <button type="button" class="dash-icon-btn dash-gift-view" title="View details" aria-label="View gift details"
+
+                                    data-sender="{{ s.display_sender }}"
+
+                                    data-gift="{{ s.display_gift_label }}"
+
+                                    data-message="{{ s.message|default:'' }}"
+
+                                    data-amount="{{ s.amount|floatformat:2 }}"
+
+                                    data-date="{{ s.created_at|date:'d M Y, h:i A' }}">
+
+                                    <svg aria-hidden="true"><use href="#icon-eye"/></svg>
+
+                                </button>
+
+                            </td>
 
                         </tr>
 
@@ -296,9 +328,9 @@
 
                         {% if item.description %}<p>{{ item.description }}</p>{% endif %}
 
-                        <div class="progress"><div class="progress-bar" style="width:{{ item.progress_percent }}%"></div></div>
+                        <div class="progress"><div class="progress-bar" data-progress="{{ item.progress_percent }}"></div></div>
 
-                        <small>KES {{ item.raised_amount }} / {{ item.target_amount }} · {{ item.progress_percent }}%</small>
+                        <small>KES {{ item.raised_amount|floatformat:2 }} / {{ item.target_amount|floatformat:2 }} · {{ item.progress_percent }}%</small>
 
                     </div>
 
@@ -340,7 +372,7 @@
 
                     <div class="qr-box" id="qr-gift" data-qr-url="{{ gift_url }}"></div>
 
-                    <button type="button" class="dash-btn dash-btn-accent dash-btn-sm qr-download" data-qr-target="qr-gift" data-qr-filename="giftme-gift-qr.png" title="Download gifting QR">
+                    <button type="button" class="dash-btn dash-btn-accent dash-btn-sm qr-download" data-qr-target="qr-gift" data-qr-filename="giftme-gift-qr.png" data-qr-type="gift" data-display-name="{{ display_name }}" data-is-birthday="{% if is_birthday_today %}1{% else %}0{% endif %}" title="Download gifting QR">
 
                         <svg class="dash-svg" aria-hidden="true"><use href="#icon-download"/></svg>
 
@@ -356,7 +388,7 @@
 
                     <div class="qr-box" id="qr-wishlist" data-qr-url="{{ wishlist_url }}"></div>
 
-                    <button type="button" class="dash-btn dash-btn-accent dash-btn-sm qr-download" data-qr-target="qr-wishlist" data-qr-filename="giftme-wishlist-qr.png" title="Download wishlist QR">
+                    <button type="button" class="dash-btn dash-btn-accent dash-btn-sm qr-download" data-qr-target="qr-wishlist" data-qr-filename="giftme-wishlist-qr.png" data-qr-type="wishlist" data-display-name="{{ display_name }}" title="Download wishlist QR">
 
                         <svg class="dash-svg" aria-hidden="true"><use href="#icon-download"/></svg>
 
@@ -388,7 +420,7 @@
 
                         <tr>
 
-                            <td class="amount">KES {{ w.amount }}</td>
+                            <td class="amount">KES {{ w.amount|floatformat:2 }}</td>
 
                             <td><span class="status status-{{ w.status }}">{{ w.get_status_display }}</span></td>
 
@@ -413,6 +445,72 @@
         </div>
 
     </section>
+
+</div>
+
+
+
+<div class="dash-modal" id="gift-detail-modal" hidden>
+
+    <div class="dash-modal-backdrop" data-close-modal="gift-detail-modal"></div>
+
+    <div class="dash-modal-card dash-gift-detail-card">
+
+        <button type="button" class="dash-modal-close dash-gift-detail-close" data-close-modal="gift-detail-modal" aria-label="Close" title="Close">
+
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+
+        </button>
+
+        <div class="gift-detail-hero">
+
+            <div class="gift-detail-hero-icon" aria-hidden="true">
+
+                <i class="fa-solid fa-gift"></i>
+
+            </div>
+
+            <div class="gift-detail-hero-body">
+
+                <p class="gift-detail-hero-label">Gift received</p>
+
+                <p class="gift-detail-hero-from" id="gift-detail-sender">—</p>
+
+                <p class="gift-detail-hero-amount" id="gift-detail-amount">—</p>
+
+            </div>
+
+        </div>
+
+        <div class="gift-detail-meta-grid">
+
+            <div class="gift-detail-meta-item">
+
+                <span class="gift-detail-meta-label"><i class="fa-solid fa-gift" aria-hidden="true"></i> Gift</span>
+
+                <strong id="gift-detail-gift">—</strong>
+
+            </div>
+
+            <div class="gift-detail-meta-item">
+
+                <span class="gift-detail-meta-label"><i class="fa-regular fa-clock" aria-hidden="true"></i> When</span>
+
+                <strong id="gift-detail-date">—</strong>
+
+            </div>
+
+        </div>
+
+        <div class="gift-detail-message-block" id="gift-detail-message-wrap">
+
+            <span class="gift-detail-message-label"><i class="fa-regular fa-message" aria-hidden="true"></i> Their message</span>
+
+            <blockquote class="gift-detail-message" id="gift-detail-message"></blockquote>
+
+        </div>
+
+    </div>
 
 </div>
 
@@ -508,7 +606,7 @@
 
                     <label for="withdraw-amount">Amount (KES)</label>
 
-                    <input id="withdraw-amount" name="amount" type="number" min="500" max="{{ available_balance|floatformat:0 }}" step="1" placeholder="500" required>
+                    <input id="withdraw-amount" name="amount" type="number" min="500" max="{{ available_balance|floatformat:2 }}" step="0.01" placeholder="500.00" required>
 
                 </div>
 
