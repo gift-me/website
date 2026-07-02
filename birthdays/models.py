@@ -159,7 +159,9 @@ class GiftContribution(models.Model):
 class WithdrawalRequest(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
+        PROCESSING = "processing", "Processing"
         APPROVED = "approved", "Approved"
+        FAILED = "failed", "Failed"
         REJECTED = "rejected", "Rejected"
 
     profile = models.ForeignKey(
@@ -172,6 +174,11 @@ class WithdrawalRequest(models.Model):
     payout_phone = models.CharField(max_length=20, blank=True)
     note = models.CharField(max_length=180, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    conversation_id = models.CharField(max_length=64, blank=True, db_index=True)
+    originator_conversation_id = models.CharField(max_length=64, blank=True, db_index=True)
+    mpesa_transaction_id = models.CharField(max_length=32, blank=True)
+    result_desc = models.CharField(max_length=255, blank=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -179,6 +186,29 @@ class WithdrawalRequest(models.Model):
 
     def __str__(self):
         return f"Withdrawal {self.amount} ({self.status})"
+
+
+class WithdrawalAuthorization(models.Model):
+    profile = models.ForeignKey("UserProfile", on_delete=models.CASCADE, related_name="withdrawal_authorizations")
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payout_phone = models.CharField(max_length=20)
+    code_hash = models.CharField(max_length=128)
+    expires_at = models.DateTimeField()
+    verified_at = models.DateTimeField(null=True, blank=True)
+    withdrawal = models.OneToOneField(
+        WithdrawalRequest,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="authorization",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Withdrawal OTP {self.profile_id} ({self.amount})"
 
 
 class UserProfile(models.Model):
@@ -216,8 +246,25 @@ class UserProfile(models.Model):
         )["total"] or 0
 
     @property
+    def reserved_withdrawal_total(self):
+        return self.withdrawals.filter(
+            status__in=[
+                WithdrawalRequest.Status.PENDING,
+                WithdrawalRequest.Status.PROCESSING,
+                WithdrawalRequest.Status.APPROVED,
+            ]
+        ).aggregate(total=models.Sum("amount"))["total"] or 0
+
+    @property
+    def pending_otp_total(self):
+        return self.withdrawal_authorizations.filter(
+            verified_at__isnull=True,
+            expires_at__gt=timezone.now(),
+        ).aggregate(total=models.Sum("amount"))["total"] or 0
+
+    @property
     def available_balance(self):
-        return self.total_raised - self.total_withdrawn
+        return self.total_raised - self.reserved_withdrawal_total - self.pending_otp_total
 
     @property
     def gifts_count(self):

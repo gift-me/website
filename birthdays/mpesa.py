@@ -47,6 +47,36 @@ def normalize_callback_url(url):
     return f"https://{parsed.netloc}{path}/"
 
 
+def derive_b2c_callback_url(stk_callback_url, suffix):
+    """Build B2C result/timeout URLs from the STK callback base URL."""
+    normalized = normalize_callback_url(stk_callback_url)
+    base = normalized.rstrip("/").rsplit("/api/mpesa/callback", 1)[0]
+    return f"{base}/api/mpesa/b2c/{suffix}/"
+
+
+def parse_b2c_result(body):
+    """Parse Daraja B2C ResultURL / QueueTimeOutURL callback body."""
+    result = (body or {}).get("Result", {})
+    parameters = {}
+    for item in result.get("ResultParameters", {}).get("ResultParameter", []):
+        key = item.get("Key")
+        if key:
+            parameters[key] = item.get("Value")
+
+    result_code = result.get("ResultCode")
+    return {
+        "result_type": result.get("ResultType"),
+        "result_code": result_code,
+        "result_desc": result.get("ResultDesc", ""),
+        "success": f"{result_code}" == "0",
+        "originator_conversation_id": result.get("OriginatorConversationID", ""),
+        "conversation_id": result.get("ConversationID", ""),
+        "transaction_id": result.get("TransactionID", "") or parameters.get("TransactionReceipt", ""),
+        "amount": parameters.get("TransactionAmount"),
+        "receiver_party": parameters.get("ReceiverPartyPublicName"),
+    }
+
+
 def normalize_phone(phone):
     """Normalize Kenyan numbers to 2547XXXXXXXX."""
     digits = "".join(c for c in f"{phone}" if c.isdigit())
@@ -100,10 +130,11 @@ def _parse_whole_kes_amount(amount):
 
 
 class MpesaClient:
-    """Minimal Daraja API client for OAuth + STK Push."""
+    """Minimal Daraja API client for OAuth + STK Push + B2C."""
 
     format_phone = staticmethod(normalize_phone)
     parse_stk_callback = staticmethod(parse_stk_callback)
+    parse_b2c_result = staticmethod(parse_b2c_result)
 
     def __init__(self):
         self.base_url = settings.MPESA_BASE_URL.rstrip("/")
@@ -113,6 +144,16 @@ class MpesaClient:
         self.passkey = settings.MPESA_PASSKEY
         self.callback_url = normalize_callback_url(settings.MPESA_CALLBACK_URL)
         self.transaction_type = settings.MPESA_TRANSACTION_TYPE
+        self.b2c_shortcode = settings.MPESA_B2C_SHORTCODE or self.shortcode
+        self.b2c_initiator = settings.MPESA_B2C_INITIATOR_NAME
+        self.b2c_security_credential = settings.MPESA_B2C_SECURITY_CREDENTIAL
+        self.b2c_command_id = settings.MPESA_B2C_COMMAND_ID
+        self.b2c_result_url = settings.MPESA_B2C_RESULT_URL or derive_b2c_callback_url(
+            settings.MPESA_CALLBACK_URL, "result"
+        )
+        self.b2c_timeout_url = settings.MPESA_B2C_TIMEOUT_URL or derive_b2c_callback_url(
+            settings.MPESA_CALLBACK_URL, "timeout"
+        )
 
     def _headers(self, access_token):
         return {
@@ -213,6 +254,70 @@ class MpesaClient:
             debug_print("[MPESA_STK_REJECTED]", data)
             raise MpesaError(
                 data.get("ResponseDescription") or data.get("CustomerMessage") or "STK Push rejected.",
+                data,
+            )
+
+        return data
+
+    def b2c_payment(self, phone, amount, remarks="GiftMe withdrawal", occasion="Withdrawal"):
+        """Initiate B2C payment to a customer's M-Pesa number."""
+        if not self.b2c_initiator or not self.b2c_security_credential:
+            raise MpesaError(
+                "MPESA_B2C_INITIATOR_NAME and MPESA_B2C_SECURITY_CREDENTIAL are required for withdrawals."
+            )
+        if not self.b2c_shortcode:
+            raise MpesaError("MPESA_B2C_SHORTCODE is required for withdrawals.")
+
+        amount = _parse_whole_kes_amount(amount)
+        phone = normalize_phone(phone)
+        debug_print(
+            "[MPESA_B2C_REQUEST]",
+            "shortcode=",
+            self.b2c_shortcode,
+            "phone=",
+            phone,
+            "amount=",
+            amount,
+        )
+
+        access_token = self.get_access_token()
+        url = f"{self.base_url}/mpesa/b2c/v1/paymentrequest"
+        payload = {
+            "InitiatorName": self.b2c_initiator,
+            "SecurityCredential": self.b2c_security_credential,
+            "CommandID": self.b2c_command_id,
+            "Amount": amount,
+            "PartyA": self.b2c_shortcode,
+            "PartyB": phone,
+            "Remarks": f"{remarks}"[:100],
+            "QueueTimeOutURL": self.b2c_timeout_url,
+            "ResultURL": self.b2c_result_url,
+            "Occasion": f"{occasion}"[:100],
+        }
+
+        response = requests.post(
+            url,
+            json=payload,
+            headers=self._headers(access_token),
+            timeout=30,
+        )
+
+        try:
+            data = response.json()
+        except json.JSONDecodeError as exc:
+            raise MpesaError("Invalid B2C response from Daraja.", response.text) from exc
+
+        if response.status_code != 200:
+            debug_print("[MPESA_B2C_HTTP_ERROR]", "status=", response.status_code, "data=", data)
+            raise MpesaError(
+                data.get("errorMessage") or data.get("error") or "B2C payment request failed.",
+                data,
+            )
+
+        if f"{data.get('ResponseCode', '')}" != "0":
+            debug_print("[MPESA_B2C_REJECTED]", data)
+            raise MpesaError(
+                data.get("ResponseDescription") or "B2C payment rejected.",
                 data,
             )
 

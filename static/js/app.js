@@ -235,7 +235,7 @@ function initWishlistModal() {
 }
 
 function initWithdrawModal() {
-    initModal("withdraw-modal", ["open-withdraw-modal"]);
+    /* handled by withdraw-modal.js on dashboard */
 }
 
 function initProfileNoticeDismiss() {

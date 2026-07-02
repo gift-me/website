@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import mpesa_views, views
+from . import mpesa_views, views, withdrawal_views
 from .auth_views import profile_setup
 
 urlpatterns = [
@@ -17,6 +17,11 @@ urlpatterns = [
     path("api/mpesa/stk-push/", mpesa_views.stk_push_initiate, name="mpesa-stk-push"),
     path("api/mpesa/callback/", mpesa_views.mpesa_callback, name="mpesa-callback"),
     path("api/mpesa/status/<int:payment_id>/", mpesa_views.payment_status, name="mpesa-payment-status"),
+    path("api/withdraw/initiate/", withdrawal_views.withdraw_initiate, name="withdraw-initiate"),
+    path("api/withdraw/verify/", withdrawal_views.withdraw_verify, name="withdraw-verify"),
+    path("api/withdraw/status/<int:withdrawal_id>/", withdrawal_views.withdraw_status, name="withdraw-status"),
+    path("api/mpesa/b2c/result/", withdrawal_views.b2c_result_callback, name="mpesa-b2c-result"),
+    path("api/mpesa/b2c/timeout/", withdrawal_views.b2c_timeout_callback, name="mpesa-b2c-timeout"),
     path("create/", views.create_birthday_page, name="birthday-create"),
     path("b/<slug:slug>/", views.birthday_detail, name="birthday-detail"),
     path("seed-demo/", views.seed_demo, name="seed-demo"),

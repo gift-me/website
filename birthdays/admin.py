@@ -9,6 +9,7 @@ from .models import (
     UserGiftReceived,
     UserProfile,
     WishlistItem,
+    WithdrawalAuthorization,
     WithdrawalRequest,
 )
 
@@ -57,9 +58,25 @@ class GiftContributionAdmin(admin.ModelAdmin):
 
 @admin.register(WithdrawalRequest)
 class WithdrawalRequestAdmin(admin.ModelAdmin):
-    list_display = ("profile", "amount", "status", "payout_phone", "created_at")
+    list_display = (
+        "profile",
+        "amount",
+        "status",
+        "payout_phone",
+        "mpesa_transaction_id",
+        "created_at",
+    )
     list_filter = ("status", "created_at")
-    search_fields = ("profile__gift_slug", "payout_phone", "note")
+    search_fields = ("profile__gift_slug", "payout_phone", "note", "conversation_id", "originator_conversation_id")
+    readonly_fields = ("created_at", "processed_at")
+
+
+@admin.register(WithdrawalAuthorization)
+class WithdrawalAuthorizationAdmin(admin.ModelAdmin):
+    list_display = ("profile", "amount", "payout_phone", "expires_at", "verified_at", "created_at")
+    list_filter = ("verified_at", "created_at")
+    search_fields = ("profile__user__email", "payout_phone")
+    readonly_fields = ("created_at", "verified_at", "code_hash")
 
 
 @admin.register(UserProfile)

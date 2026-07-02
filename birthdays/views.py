@@ -1,13 +1,12 @@
 from django.contrib import messages
 from decimal import Decimal, InvalidOperation
-import re
 from django.db import transaction
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from .auth_views import profile_setup
-from .models import BirthdayPage, CatalogGift, GiftContribution, GiftOption, UserGiftReceived, UserProfile, WishlistItem, WithdrawalRequest
+from .models import BirthdayPage, CatalogGift, GiftContribution, GiftOption, UserGiftReceived, UserProfile, WishlistItem
 
 
 DEFAULT_GIFT_OPTIONS = [
@@ -60,10 +59,6 @@ def accessibility(request):
     return render(request, "birthdays/accessibility.html")
 
 
-MIN_WITHDRAWAL = Decimal("500")
-MPESA_PATTERN = re.compile(r"^07\d{8}$")
-
-
 @login_required
 def dashboard(request):
     profile, _ = UserProfile.objects.get_or_create(user=request.user)
@@ -106,42 +101,6 @@ def dashboard(request):
             item_id = request.POST.get("item_id")
             profile.wishlist_items.filter(pk=item_id).delete()
             messages.success(request, "Wishlist item removed.")
-            return redirect("dashboard")
-
-        if action == "withdraw":
-            amount_raw = request.POST.get("amount", "").strip()
-            payout_phone = request.POST.get("payout_phone", "").strip()
-            try:
-                amount = Decimal(amount_raw)
-                if amount <= 0:
-                    raise InvalidOperation
-            except (InvalidOperation, TypeError):
-                messages.error(request, "Enter a valid withdrawal amount.")
-                return redirect("dashboard")
-
-            if amount < MIN_WITHDRAWAL:
-                messages.error(request, "Minimum withdrawal is KES 500.")
-                return redirect("dashboard")
-
-            if amount > profile.available_balance:
-                messages.error(request, "Withdrawal amount exceeds available balance.")
-                return redirect("dashboard")
-
-            if not payout_phone:
-                messages.error(request, "M-Pesa number is required.")
-                return redirect("dashboard")
-
-            if not MPESA_PATTERN.match(payout_phone):
-                messages.error(request, "Enter a valid M-Pesa number.")
-                return redirect("dashboard")
-
-            profile.payout_phone = payout_phone
-            profile.save(update_fields=["payout_phone"])
-
-            WithdrawalRequest.objects.create(
-                profile=profile, amount=amount, payout_phone=payout_phone
-            )
-            messages.success(request, "Withdrawal request submitted.")
             return redirect("dashboard")
 
     display_name = profile.username or request.user.email

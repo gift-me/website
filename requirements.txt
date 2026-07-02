@@ -3,3 +3,7 @@ django-allauth
 Pillow
 requests
 python-dotenv
+gunicorn
+whitenoise
+dj-database-url
+psycopg2-binary
