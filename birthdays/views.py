@@ -50,7 +50,8 @@ def _poster_logo_url(request):
 
 
 @login_required
-def dashboard(request):    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+def dashboard(request):    
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
     if not profile.gift_slug or not profile.wishlist_slug:
         profile.save()
 
@@ -92,7 +93,8 @@ def dashboard(request):    profile, _ = UserProfile.objects.get_or_create(user=r
             messages.success(request, "Wishlist item removed.")
             return redirect("dashboard")
 
-    display_name = profile.username or request.user.email    gift_url = request.build_absolute_uri(profile.get_gift_url_path())
+    display_name = profile.username or request.user.email
+    gift_url = request.build_absolute_uri(profile.get_gift_url_path())
     wishlist_url = request.build_absolute_uri(profile.get_wishlist_url_path())
     gifts_qs = profile.gifts_received.all()
     supporters = gifts_qs[:20]
