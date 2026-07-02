@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+from decimal import Decimal
 from pathlib import Path
 import os
 
@@ -66,6 +67,7 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'birthdays.apps.BirthdaysConfig',
+    'ops.apps.OpsConfig',
 ]
 
 try:
@@ -102,6 +104,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'ops.context_processors.ops_stats',
+                'birthdays.context_processors.site_settings',
             ],
         },
     },
@@ -228,3 +232,36 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() in ("1", "true", "yes")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "GiftMe <hello@giftme.app>")
+
+# Redis cache (optional — falls back to local memory)
+REDIS_URL = os.environ.get("REDIS_URL", "")
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "IGNORE_EXCEPTIONS": True,
+            },
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
+
+STK_QUERY_MIN_AGE_SECONDS = int(os.environ.get("STK_QUERY_MIN_AGE_SECONDS", "25"))
+STK_IP_LIMIT = int(os.environ.get("STK_IP_LIMIT", "10"))
+STK_IP_WINDOW = int(os.environ.get("STK_IP_WINDOW", "60"))
+STK_PHONE_LIMIT = int(os.environ.get("STK_PHONE_LIMIT", "5"))
+STK_PHONE_WINDOW = int(os.environ.get("STK_PHONE_WINDOW", "3600"))
+STK_MAX_PENDING_PER_PHONE_PROFILE = int(os.environ.get("STK_MAX_PENDING_PER_PHONE_PROFILE", "3"))
+STK_PROFILE_LIMIT = int(os.environ.get("STK_PROFILE_LIMIT", "100"))
+STK_PROFILE_WINDOW = int(os.environ.get("STK_PROFILE_WINDOW", "3600"))
+PAYMENT_PENDING_EXPIRY_MINUTES = int(os.environ.get("PAYMENT_PENDING_EXPIRY_MINUTES", "15"))
+
+PLATFORM_FEE_PERCENT = Decimal(os.environ.get("PLATFORM_FEE_PERCENT", "10"))
+PLATFORM_FEE_CAP = Decimal(os.environ.get("PLATFORM_FEE_CAP", "800"))

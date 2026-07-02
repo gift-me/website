@@ -50,7 +50,7 @@
     {% block extra_css %}{% endblock %}
     {% block extra_head %}{% endblock %}
 </head>
-<body class="font-sans {% block body_class %}{% endblock %}{% with url_name=request.resolver_match.url_name %}{% if url_name != 'dashboard' and url_name != 'profile-setup' %} has-fixed-header{% endif %}{% endwith %}">
+<body class="{% block body_class %}{% endblock %}">
     {% include "includes/site_icons.html" %}
 
     {% block site_header %}
@@ -62,7 +62,7 @@
     <span data-toast-message="{{ message }}" data-toast-type="{{ message.tags }}" hidden></span>
     {% endfor %}
 
-    <main class="{% block main_classes %}container page-content{% endblock %}">
+    <main class="{% block main_class %}container page-content{% endblock %}">
         {% block content %}{% endblock %}
     </main>
 

@@ -9,6 +9,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from .exceptions import MpesaError
+from .fees import calculate_mpesa_withdrawal_fee
 from .models import UserProfile, WithdrawalAuthorization, WithdrawalRequest
 from .mpesa import get_mpesa_client, normalize_phone
 
@@ -121,6 +122,12 @@ def verify_and_disburse(profile: UserProfile, authorization_id, code_raw):
     if authorization.amount > profile.total_raised - profile.reserved_withdrawal_total:
         raise MpesaError("Withdrawal amount exceeds available balance.")
 
+    withdrawal_fee = calculate_mpesa_withdrawal_fee(authorization.amount)
+    if authorization.amount + withdrawal_fee > profile.total_raised - profile.reserved_withdrawal_total:
+        raise MpesaError(
+            f"Insufficient balance. M-Pesa fee of KES {int(withdrawal_fee)} applies to this withdrawal."
+        )
+
     authorization.verified_at = timezone.now()
     authorization.save(update_fields=["verified_at"])
 
@@ -128,6 +135,7 @@ def verify_and_disburse(profile: UserProfile, authorization_id, code_raw):
         profile=profile,
         amount=authorization.amount,
         payout_phone=authorization.payout_phone,
+        mpesa_withdrawal_fee=withdrawal_fee,
         status=WithdrawalRequest.Status.PROCESSING,
     )
     authorization.withdrawal = withdrawal

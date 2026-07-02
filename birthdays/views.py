@@ -1,50 +1,24 @@
 from django.contrib import messages
 from decimal import Decimal, InvalidOperation
-from django.db import transaction
 from django.contrib.auth.decorators import login_required
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 
-from .auth_views import profile_setup
-from .models import BirthdayPage, CatalogGift, GiftContribution, GiftOption, UserGiftReceived, UserProfile, WishlistItem
+from .leaderboard import get_top_gifters
+from .models import CatalogGift, SiteSettings, UserProfile, WishlistItem
 
 
-DEFAULT_GIFT_OPTIONS = [
-    ("Birthday Cake", "fa-cake-candles", 100, "cake"),
-    ("Balloons", "fa-balloon", 50, "balloons"),
-    ("Pizza", "fa-pizza-slice", 300, "pizza"),
-    ("Burger", "fa-burger", 250, "burger"),
-    ("Coffee", "fa-mug-hot", 100, "coffee"),
-    ("Champagne", "fa-champagne-glasses", 500, "sparkles"),
-    ("Vacation Fund", "fa-plane-departure", 1000, "stars"),
-    ("Car Fuel", "fa-gas-pump", 500, "fuel"),
-    ("Surprise Gift", "fa-gift", None, "confetti"),
-]
-
-
-def home(request):
-    pages = BirthdayPage.objects.all()[:6]
-    return render(request, "birthdays/home.html", {"pages": pages, "now": timezone.now().date()})
+def home(request):    return render(request, "birthdays/home.html", {"now": timezone.now().date()})
 
 
 def about(request):
     return render(request, "birthdays/about.html")
 
 
-def contact(request):
-    if request.method == "POST":
-        name = request.POST.get("name", "").strip()
-        email = request.POST.get("email", "").strip()
-        request_type = request.POST.get("request_type", "").strip()
-        details = request.POST.get("details", "").strip()
-        if name and email and request_type and details:
-            messages.success(
-                request,
-                "Thank you. We have received your request and will reach out shortly.",
-            )
-            return redirect("contact")
-        messages.error(request, "Please fill in all required contact fields.")
-    return render(request, "birthdays/contact.html")
+def contact_redirect(request):
+    return redirect(f"{reverse('home')}#contact")
 
 
 def privacy(request):
@@ -59,9 +33,24 @@ def accessibility(request):
     return render(request, "birthdays/accessibility.html")
 
 
+def _display_site_url(request):
+    settings_obj = SiteSettings.load()
+    raw = (settings_obj.website_url or "").strip()
+    if raw:
+        return raw.replace("https://", "").replace("http://", "").strip("/")
+    absolute = request.build_absolute_uri("/")
+    return absolute.replace("https://", "").replace("http://", "").strip("/")
+
+
+def _poster_logo_url(request):
+    settings_obj = SiteSettings.load()
+    if settings_obj.logo:
+        return request.build_absolute_uri(settings_obj.logo.url)
+    return request.build_absolute_uri(staticfiles_storage.url("images/logo.svg"))
+
+
 @login_required
-def dashboard(request):
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+def dashboard(request):    profile, _ = UserProfile.objects.get_or_create(user=request.user)
     if not profile.gift_slug or not profile.wishlist_slug:
         profile.save()
 
@@ -103,14 +92,19 @@ def dashboard(request):
             messages.success(request, "Wishlist item removed.")
             return redirect("dashboard")
 
-    display_name = profile.username or request.user.email
-    gift_url = request.build_absolute_uri(profile.get_gift_url_path())
+    display_name = profile.username or request.user.email    gift_url = request.build_absolute_uri(profile.get_gift_url_path())
     wishlist_url = request.build_absolute_uri(profile.get_wishlist_url_path())
     gifts_qs = profile.gifts_received.all()
     supporters = gifts_qs[:20]
     withdrawals = profile.withdrawals.all()[:20]
     wishlist_items = profile.wishlist_items.all()
     supporters_count = gifts_qs.values("sender_name", "is_anonymous").distinct().count()
+    today = timezone.now().date()
+    is_birthday_today = bool(
+        profile.birthday_date
+        and profile.birthday_date.month == today.month
+        and profile.birthday_date.day == today.day
+    )
 
     return render(
         request,
@@ -129,6 +123,9 @@ def dashboard(request):
             "gifts_count": profile.gifts_count,
             "supporters_count": supporters_count,
             "profile_incomplete": not profile.setup_completed,
+            "is_birthday_today": is_birthday_today,
+            "poster_logo_url": _poster_logo_url(request),
+            "site_display_url": _display_site_url(request),
         },
     )
 
@@ -140,7 +137,15 @@ def _profile_display_username(profile):
 def user_gift_page(request, slug):
     profile = get_object_or_404(UserProfile, gift_slug=slug)
     display_username = _profile_display_username(profile)
+    display_name = profile.display_name or display_username
     gifts = CatalogGift.objects.filter(is_active=True)
+    top_gifters = get_top_gifters(profile, limit=10)
+    today = timezone.now().date()
+    is_birthday_today = bool(
+        profile.birthday_date
+        and profile.birthday_date.month == today.month
+        and profile.birthday_date.day == today.day
+    )
 
     return render(
         request,
@@ -148,7 +153,10 @@ def user_gift_page(request, slug):
         {
             "profile": profile,
             "display_username": display_username,
+            "display_name": display_name,
             "gifts": gifts,
+            "top_gifters": top_gifters,
+            "is_birthday_today": is_birthday_today,
             "page_type": "gift",
             "page_slug": profile.gift_slug,
         },
@@ -158,7 +166,15 @@ def user_gift_page(request, slug):
 def user_wishlist_page(request, slug):
     profile = get_object_or_404(UserProfile, wishlist_slug=slug)
     display_username = _profile_display_username(profile)
+    display_name = profile.display_name or display_username
     items = profile.wishlist_items.all()
+    top_gifters = get_top_gifters(profile, limit=10)
+    today = timezone.now().date()
+    is_birthday_today = bool(
+        profile.birthday_date
+        and profile.birthday_date.month == today.month
+        and profile.birthday_date.day == today.day
+    )
 
     return render(
         request,
@@ -166,85 +182,18 @@ def user_wishlist_page(request, slug):
         {
             "profile": profile,
             "display_username": display_username,
+            "display_name": display_name,
             "items": items,
+            "top_gifters": top_gifters,
+            "is_birthday_today": is_birthday_today,
             "page_type": "wishlist",
             "page_slug": profile.wishlist_slug,
         },
     )
 
 
-@transaction.atomic
 def create_birthday_page(request):
-    if request.method == "POST":
-        form = BirthdayPageForm(request.POST)
-        if form.is_valid():
-            page = form.save(commit=False)
-            page.owner = request.user if request.user.is_authenticated else None
-            page.save()
-            for idx, option in enumerate(DEFAULT_GIFT_OPTIONS):
-                label, icon, amount, animation = option
-                GiftOption.objects.create(
-                    page=page, label=label, icon=icon, amount=amount, animation=animation, display_order=idx
-                )
-            messages.success(request, "Birthday page created. Share your link and start receiving gifts.")
-            return redirect(page.get_absolute_url())
-    else:
-        form = BirthdayPageForm()
-    return render(request, "birthdays/create_page.html", {"form": form})
-
-
-@transaction.atomic
-def birthday_detail(request, slug):
-    page = get_object_or_404(BirthdayPage, slug=slug)
-
-    if request.method == "POST":
-        gift_form = GiftContributionForm(request.POST, page=page)
-        if gift_form.is_valid():
-            gift = gift_form.save(commit=False)
-            gift.page = page
-            gift.save()
-            messages.success(
-                request,
-                "Gift added successfully. Payment integration is still pending, but this records the intention.",
-            )
-            return redirect(page.get_absolute_url())
-    else:
-        gift_form = GiftContributionForm(page=page, initial={"amount": 100})
-
-    gifts = page.gifts.select_related("option")[:12]
-    return render(
-        request,
-        "birthdays/birthday_detail.html",
-        {"page": page, "gift_form": gift_form, "gifts": gifts, "recent_count": page.gifts_count},
-    )
-
-
-def seed_demo(request):
-    if BirthdayPage.objects.filter(slug="julius28").exists():
-        page = BirthdayPage.objects.get(slug="julius28")
-        return redirect(page.get_absolute_url())
-
-    with transaction.atomic():
-        page = BirthdayPage.objects.create(
-            name="Julius",
-            slug="julius28",
-            age_turning=28,
-            birthday_date=timezone.now().date(),
-            bio="Celebrating 28 years. Help me unlock birthday treats and memories.",
-            goal_amount=80000,
-            payout_phone="+254700000000",
-            payout_wallet_name="M-Pesa",
-        )
-        for idx, option in enumerate(DEFAULT_GIFT_OPTIONS):
-            label, icon, amount, animation = option
-            GiftOption.objects.create(
-                page=page, label=label, icon=icon, amount=amount, animation=animation, display_order=idx
-            )
-
-        pizza = page.gift_options.get(label="Pizza")
-        cake = page.gift_options.get(label="Birthday Cake")
-        GiftContribution.objects.create(page=page, option=cake, sender_name="Brian", amount=100, message="Enjoy!")
-        GiftContribution.objects.create(page=page, option=pizza, sender_name="Mary", amount=300, message="Happy day!")
-        GiftContribution.objects.create(page=page, option=pizza, sender_name="", is_anonymous=True, amount=500)
-
-    return redirect(page.get_absolute_url())
+    """Legacy URL: celebration pages are created via signup and the dashboard."""
+    if request.user.is_authenticated:
+        return redirect("dashboard")
+    return redirect("account_signup")

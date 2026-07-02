@@ -503,6 +503,18 @@ select {
     padding: 0.65rem 0.75rem;
     font-family: var(--font-sans);
     font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible {
+    border-color: rgba(230, 57, 70, 0.55);
+    box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.12);
 }
 
 label {

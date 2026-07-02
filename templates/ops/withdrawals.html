@@ -1,0 +1,42 @@
+{% extends "ops/base.html" %}
+{% block ops_heading %}User withdrawals{% endblock %}
+{% block ops_content %}
+<form class="ops-filters" method="get">
+    <input type="search" name="q" value="{{ q }}" placeholder="Phone, user, note…">
+    <select name="status">
+        <option value="">All statuses</option>
+        <option value="pending" {% if status == 'pending' %}selected{% endif %}>Pending</option>
+        <option value="approved" {% if status == 'approved' %}selected{% endif %}>Approved</option>
+        <option value="rejected" {% if status == 'rejected' %}selected{% endif %}>Rejected</option>
+    </select>
+    <button type="submit" class="ops-btn-secondary">Filter</button>
+</form>
+<div class="ops-table-wrap">
+    <table class="ops-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>User</th>
+                <th>Amount</th>
+                <th>M-Pesa fee</th>
+                <th>Phone</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for w in withdrawals %}
+            <tr>
+                <td>{{ w.created_at|date:"M j, H:i" }}</td>
+                <td>{{ w.profile.username|default:w.profile.user.email }}</td>
+                <td>KES {{ w.amount|floatformat:0 }}</td>
+                <td>KES {{ w.mpesa_withdrawal_fee|floatformat:0 }}</td>
+                <td>{{ w.payout_phone }}</td>
+                <td><span class="ops-badge ops-badge-{{ w.status }}">{{ w.status }}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6">No withdrawals found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

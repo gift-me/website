@@ -1,43 +1,153 @@
 {% extends "base.html" %}
-{% load static %}
-{% block title %}{{ display_username }}'s Wishlist | GiftMe{% endblock %}
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/gift-page.css' %}">
-<link rel="stylesheet" href="{% static 'css/wishlist-page.css' %}">
-{% endblock %}
-{% block content %}
-<section class="wishlist-page">
-    <header class="wishlist-page-head">
-        {% if profile.profile_picture %}
-        <img class="wishlist-page-avatar" src="{{ profile.profile_picture.url }}" alt="">
-        {% endif %}
-        <h1>{{ display_username }}'s wishlist</h1>
-        <p class="wishlist-page-hint">Tap an item to contribute. You can gift any amount, even if the goal is reached.</p>
-    </header>
 
-    <ul class="wishlist-items">
-        {% for item in items %}
-        <li>
-            <button type="button" class="wishlist-item-btn" data-wishlist-id="{{ item.id }}" data-wishlist-title="{{ item.title }}" data-wishlist-target="{{ item.target_amount|floatformat:0 }}">
-                <div class="wishlist-item-main">
-                    <span class="wishlist-item-title">{{ item.title }}</span>
-                    <span class="wishlist-item-meta">KES {{ item.raised_amount }} of {{ item.target_amount }} · {{ item.progress_percent }}%</span>
+{% load static %}
+
+{% block title %}{{ display_username }}'s Wishlist | GiftMe{% endblock %}
+
+{% block body_class %}gift-page-body has-fixed-header{% endblock %}
+
+{% block main_class %}gift-page-main{% endblock %}
+
+{% block extra_css %}
+
+<link rel="stylesheet" href="{% static 'css/gift-page.css' %}">
+
+<link rel="stylesheet" href="{% static 'css/wishlist-page.css' %}">
+
+{% endblock %}
+
+{% block content %}
+
+<div class="gift-page wishlist-page">
+
+    <div class="gift-hero-sticky">
+
+        <div class="gift-hero-card">
+            <div class="gift-hero-profile">
+
+                {% if profile.profile_picture %}
+
+                <img class="gift-hero-avatar" src="{{ profile.profile_picture.url }}" alt="">
+
+                {% else %}
+
+                <span class="gift-hero-avatar gift-hero-avatar-placeholder" aria-hidden="true">
+
+                    <i class="fa-solid fa-user"></i>
+
+                </span>
+
+                {% endif %}
+
+                <div class="gift-hero-info">
+
+                    <p class="gift-hero-label">You are viewing</p>
+
+                    <p class="gift-hero-username">
+
+                        <span>@{{ display_username }}</span>
+
+                        {% include "birthdays/includes/verified_badge.html" %}
+
+                    </p>
+
+                    {% if is_birthday_today %}
+
+                    <p class="gift-hero-badge"><i class="fa-solid fa-cake-candles"></i> It's their birthday!</p>
+
+                    {% endif %}
+
+                    <p class="gift-hero-tagline">Help fulfill their wishes</p>
+
                 </div>
-                <div class="wishlist-item-progress">
-                    <div class="wishlist-item-progress-bar" style="width:{{ item.progress_percent }}%"></div>
-                </div>
-                <i class="fa-solid fa-chevron-right wishlist-item-chevron" aria-hidden="true"></i>
-            </button>
-        </li>
-        {% empty %}
-        <li class="wishlist-empty">No wishlist items yet.</li>
-        {% endfor %}
-    </ul>
-</section>
+
+            </div>
+
+            <div class="gift-hero-action">
+
+                <a href="{% url 'user-gift' slug=profile.gift_slug %}" class="gift-custom-btn gift-custom-btn-link" title="Send a gift">
+
+                    <i class="fa-solid fa-gift gift-custom-btn-icon" aria-hidden="true"></i>
+
+                    <span class="gift-custom-btn-text">Send a gift</span>
+
+                    <span class="gift-custom-btn-text-mobile">Send a gift</span>
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="gift-page-body-content gift-page-body-content--animated">
+
+        <canvas class="gift-bg-canvas gift-section-canvas" data-gift-bg="catalog" aria-hidden="true"></canvas>
+
+        <section class="wishlist-items-section">
+
+            <h2>Their wishes</h2>
+
+            <ul class="wishlist-items">
+
+                {% for item in items %}
+
+                <li>
+
+                    <button type="button" class="wishlist-item-btn" data-wishlist-id="{{ item.id }}" data-wishlist-title="{{ item.title }}" data-wishlist-target="{{ item.target_amount|floatformat:0 }}">
+
+                        <div class="wishlist-item-main">
+
+                            <span class="wishlist-item-title">{{ item.title }}</span>
+
+                            <span class="wishlist-item-meta">KES {{ item.raised_amount|floatformat:0 }} of {{ item.target_amount|floatformat:0 }} · {{ item.progress_percent }}%</span>
+
+                        </div>
+
+                        <div class="wishlist-item-progress">
+
+                            <div class="wishlist-item-progress-bar" data-progress="{{ item.progress_percent }}"></div>
+
+                        </div>
+
+                        <i class="fa-solid fa-chevron-right wishlist-item-chevron" aria-hidden="true"></i>
+
+                    </button>
+
+                </li>
+
+                {% empty %}
+
+                <li class="wishlist-empty">No wishlist items yet.</li>
+
+                {% endfor %}
+
+            </ul>
+
+        </section>
+
+        {% include "birthdays/includes/top_gifters.html" %}
+
+    </div>
+
+</div>
+
+
 
 {% include "birthdays/includes/contribute_modal.html" %}
+
 {% endblock %}
+
 {% block scripts %}
+
+<script src="{% static 'js/gift-bg-animation.js' %}"></script>
+
 <script src="{% static 'js/contribute-modal.js' %}"></script>
+
 <script src="{% static 'js/wishlist-page.js' %}"></script>
+
 {% endblock %}
+

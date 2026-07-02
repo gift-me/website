@@ -23,6 +23,7 @@ from birthdays.auth_views import CustomSignupView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('ops/', include('ops.urls')),
     path('accounts/signup/', CustomSignupView.as_view(), name='account_signup'),
     path('accounts/', include('allauth.urls')),
     path('', include('birthdays.urls')),

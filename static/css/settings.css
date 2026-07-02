@@ -81,10 +81,11 @@
     background: #fff;
 }
 
-.settings-input:focus {
+.settings-input:focus,
+.settings-input:focus-visible {
     outline: none;
-    border-color: rgba(230, 57, 70, 0.45);
-    box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.08);
+    border-color: rgba(230, 57, 70, 0.55);
+    box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.12);
 }
 
 .settings-input:disabled {

@@ -1,0 +1,23 @@
+{% extends "ops/base.html" %}
+{% block ops_heading %}Site settings{% endblock %}
+{% block ops_content %}
+<form class="ops-settings-form" method="post" action="{% url 'ops-settings-save' %}" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="ops-settings-grid">
+        <label>Contact email<input type="email" name="contact_email" value="{{ settings_obj.contact_email }}"></label>
+        <label>Contact phone<input type="text" name="contact_phone" value="{{ settings_obj.contact_phone }}"></label>
+        <label>Facebook URL<input type="url" name="facebook_url" value="{{ settings_obj.facebook_url }}"></label>
+        <label>TikTok URL<input type="url" name="tiktok_url" value="{{ settings_obj.tiktok_url }}"></label>
+        <label>Instagram URL<input type="url" name="instagram_url" value="{{ settings_obj.instagram_url }}"></label>
+        <label>Website URL (no https)<input type="text" name="website_url" value="{{ settings_obj.website_url }}" placeholder="giftme.co"></label>
+        <label>Logo{% if settings_obj.logo %}<img src="{{ settings_obj.logo.url }}" alt="" class="ops-settings-preview">{% endif %}<input type="file" name="logo" accept="image/*"></label>
+        <label>Favicon{% if settings_obj.favicon %}<img src="{{ settings_obj.favicon.url }}" alt="" class="ops-settings-preview ops-settings-preview-sm">{% endif %}<input type="file" name="favicon" accept="image/*"></label>
+    </div>
+    <div class="ops-panel ops-settings-env-note">
+        <h2>Platform fees (from environment)</h2>
+        <p class="ops-muted-text">Gift processing uses <code>PLATFORM_FEE_PERCENT</code> and <code>PLATFORM_FEE_CAP</code> in your <code>.env</code> file. Change those and restart the app to update fees.</p>
+        <p><strong>{{ platform_fee_percent }}%</strong> capped at <strong>KES {{ platform_fee_cap|floatformat:0 }}</strong> per gift.</p>
+    </div>
+    <button type="submit" class="ops-btn-primary">Save settings</button>
+</form>
+{% endblock %}
