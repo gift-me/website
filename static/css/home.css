@@ -1,4 +1,13 @@
 /* ── Landing layout ── */
+.landing-main.container,
+.landing-main.page-content {
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+    padding-block: 0;
+    min-height: auto;
+}
+
 .landing-main {
     width: 100%;
     max-width: none;
@@ -72,7 +81,34 @@ body.is-landing .site-footer .container {
 /* ── Hero (animations & orbit chips — layout via Tailwind) ── */
 .landing-hero {
     position: relative;
-    background: linear-gradient(180deg, rgba(244, 211, 94, 0.12) 0%, var(--background) 40%, var(--background) 100%);
+    isolation: isolate;
+    overflow: clip;
+    background: var(--background);
+}
+
+.landing-hero__backdrop {
+    position: absolute;
+    top: calc(-1 * 4.25rem);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    min-height: calc(100% + 4.25rem);
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+    background: linear-gradient(
+        180deg,
+        rgba(244, 211, 94, 0.18) 0%,
+        rgba(244, 211, 94, 0.12) 30%,
+        rgba(255, 253, 248, 0.96) 65%,
+        var(--background) 100%
+    );
+}
+
+.landing-hero > .landing-inner {
+    position: relative;
+    z-index: 1;
 }
 
 .hero-heading {

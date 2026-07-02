@@ -3,7 +3,7 @@
 
 {% block title %}GiftMe | Gift better. Celebrate louder.{% endblock %}
 {% block body_class %}is-landing{% endblock %}
-{% block main_classes %}landing-main{% endblock %}
+{% block main_class %}landing-main{% endblock %}
 {% block extra_css %}<link rel="stylesheet" href="{% static 'css/home.css' %}">{% endblock %}
 
 {% block content %}
@@ -13,7 +13,7 @@
     <section class="landing-hero relative overflow-hidden pb-6 pt-28 md:pb-8 md:pt-32 lg:pt-40" aria-labelledby="hero-heading">
 
         {# Background layers #}
-        <div class="pointer-events-none absolute inset-0 -top-[4.25rem] overflow-hidden" aria-hidden="true">
+        <div class="landing-hero__backdrop" aria-hidden="true">
             <div class="absolute -left-24 top-16 h-72 w-72 rounded-full bg-secondary/25 blur-3xl md:h-96 md:w-96"></div>
             <div class="absolute -right-16 top-32 h-64 w-64 rounded-full bg-primary/10 blur-3xl md:h-80 md:w-80"></div>
             <div class="absolute bottom-0 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-accent/10 blur-3xl md:h-72 md:w-72"></div>
