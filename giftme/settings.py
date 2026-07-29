@@ -14,6 +14,8 @@ from decimal import Decimal
 from pathlib import Path
 import os
 
+from django.core.exceptions import ImproperlyConfigured
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 try:
@@ -115,10 +117,22 @@ WSGI_APPLICATION = 'giftme.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-
-database_url = os.environ.get("DATABASE_URL")
-if database_url:
+# DEBUG=True  → SQLite (local)
+# DEBUG=False → Postgres via DATABASE_URL
+if DEBUG:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
+else:
+    database_url = os.environ.get("DATABASE_URL", "").strip()
+    if not database_url:
+        raise ImproperlyConfigured(
+            "DEBUG is False but DATABASE_URL is not set. "
+            "Add a Postgres connection string to your .env."
+        )
     import dj_database_url
 
     DATABASES = {
@@ -127,13 +141,6 @@ if database_url:
             conn_max_age=600,
             conn_health_checks=True,
         )
-    }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
     }
 
 
@@ -189,10 +196,13 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 ACCOUNT_LOGIN_METHODS = {"email"}
-ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
-ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True
+ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_LOGOUT_ON_GET = True
+ACCOUNT_EMAIL_SUBJECT_PREFIX = "[GiftMe] "
+ACCOUNT_ADAPTER = "birthdays.adapters.AccountAdapter"
 
 LOGIN_REDIRECT_URL = "dashboard"
 LOGOUT_REDIRECT_URL = "home"
@@ -221,17 +231,26 @@ MPESA_B2C_TIMEOUT_URL = os.environ.get("MPESA_B2C_TIMEOUT_URL", "")
 WITHDRAWAL_MIN_AMOUNT = 500
 WITHDRAWAL_OTP_EXPIRY_MINUTES = int(os.environ.get("WITHDRAWAL_OTP_EXPIRY_MINUTES", "10"))
 
-# Email (withdrawal OTP)
-EMAIL_BACKEND = os.environ.get(
-    "EMAIL_BACKEND",
-    "django.core.mail.backends.console.EmailBackend",
-)
+# Email (verification, password reset, withdrawal OTP)
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() in ("1", "true", "yes")
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "GiftMe <hello@giftme.app>")
+EMAIL_USE_TLS = _env_bool("EMAIL_USE_TLS", True)
+EMAIL_USE_SSL = _env_bool("EMAIL_USE_SSL", False)
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "GiftMe <info@giftme.co.ke>")
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+# Prefer SMTP whenever a host is configured. Console backend only dumps to the terminal.
+_email_backend = os.environ.get("EMAIL_BACKEND", "").strip()
+if EMAIL_HOST and (
+    not _email_backend
+    or _email_backend.endswith("console.EmailBackend")
+):
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+elif _email_backend:
+    EMAIL_BACKEND = _email_backend
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # Redis cache (optional — falls back to local memory)
 REDIS_URL = os.environ.get("REDIS_URL", "")

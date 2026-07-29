@@ -72,13 +72,6 @@ function getCsrfToken(form) {
     return input ? input.value : "";
 }
 
-function syncCsrfInput(form) {
-    const token = getCsrfFromCookie();
-    if (!token || !form) return;
-    const input = form.querySelector("[name=csrfmiddlewaretoken]");
-    if (input) input.value = token;
-}
-
 function ajaxHeaders(form) {
     const csrf = getCsrfToken(form);
     return {
@@ -130,71 +123,35 @@ function initSignupFlow() {
     const form = document.getElementById("signup-form");
     if (!form) return;
 
-    const profileUrl = form.dataset.profileUrl;
-    const credentialsPhase = document.getElementById("phase-credentials");
-    const onboardingPhase = document.getElementById("phase-onboarding");
     const emailInput = document.getElementById("id_email");
     const passwordInput = document.getElementById("id_password1");
     const confirmInput = document.getElementById("id_password2");
     const confirmStep = document.getElementById("confirm-step");
     const continueBtn = document.getElementById("signup-continue");
-    const finishBtn = document.getElementById("signup-finish");
     const passwordHint = document.getElementById("password-hint");
     const confirmHint = document.getElementById("confirm-hint");
-    const successModal = document.getElementById("signup-success-modal");
 
-    if (successModal) {
-        successModal.hidden = true;
-    }
-
-    const fileInput = document.getElementById("id_profile_picture");
-    const avatarPicker = document.getElementById("avatar-picker");
-    const avatarPreview = document.getElementById("avatar-preview");
-    const avatarPlus = document.getElementById("avatar-plus");
-    const usernameInput = document.getElementById("onboard-username");
-    const nameInput = document.getElementById("onboard-name");
-    const birthdayInput = document.getElementById("onboard-birthday");
-
-    const steps = Array.from(document.querySelectorAll("[data-onboard-step]"));
-    const dots = Array.from(document.querySelectorAll("[data-step-dot]"));
-    let currentStep = 1;
     let confirmUnlocked = false;
-    let accountCreated = false;
-
-    function showStep(step) {
-        currentStep = step;
-        steps.forEach((panel) => {
-            const active = Number(panel.dataset.onboardStep) === step;
-            panel.hidden = !active;
-            panel.classList.toggle("active", active);
-        });
-        dots.forEach((dot) => {
-            dot.classList.toggle("active", Number(dot.dataset.stepDot) === step);
-        });
-    }
 
     function resetConfirmStep() {
         confirmUnlocked = false;
-        accountCreated = false;
-        confirmStep.hidden = true;
-        confirmInput.value = "";
-        confirmInput.removeAttribute("required");
+        if (confirmStep) confirmStep.hidden = true;
+        if (confirmInput) {
+            confirmInput.value = "";
+            confirmInput.removeAttribute("required");
+        }
         setButtonLabel(continueBtn, "Continue");
-        continueBtn.disabled = false;
+        if (continueBtn) continueBtn.disabled = false;
         setHint(confirmHint, "", false);
     }
 
     function unlockConfirmStep() {
         confirmUnlocked = true;
-        confirmStep.hidden = false;
-        confirmInput.setAttribute("required", "required");
-        confirmInput.focus();
-    }
-
-    function startOnboarding() {
-        credentialsPhase.hidden = true;
-        onboardingPhase.hidden = false;
-        showStep(1);
+        if (confirmStep) confirmStep.hidden = false;
+        if (confirmInput) {
+            confirmInput.setAttribute("required", "required");
+            confirmInput.focus();
+        }
     }
 
     async function createAccount() {
@@ -212,16 +169,22 @@ function initSignupFlow() {
             credentials: "same-origin",
         });
 
-        const data = await response.json();
+        let data = {};
+        try {
+            data = await response.json();
+        } catch (error) {
+            throw new Error("Could not create account. Please try again.");
+        }
 
-        if (response.ok && (data.success || data.location)) {
-            accountCreated = true;
-            syncCsrfInput(form);
+        if (response.ok && (data.success || data.location || data.status === 200)) {
+            window.location.href = data.location || "/accounts/confirm-email/";
             return;
         }
 
         throw new Error(extractResponseError(data, "Could not create account. Please try again."));
     }
+
+    if (!continueBtn) return;
 
     continueBtn.addEventListener("click", async () => {
         setHint(passwordHint, "", false);
@@ -261,10 +224,8 @@ function initSignupFlow() {
 
         try {
             await createAccount();
-            startOnboarding();
         } catch (error) {
             showFormError(error.message);
-        } finally {
             continueBtn.disabled = false;
             setButtonLabel(continueBtn, "Continue");
         }
@@ -284,88 +245,6 @@ function initSignupFlow() {
             resetConfirmStep();
         }
     });
-
-    avatarPicker.addEventListener("click", () => fileInput.click());
-
-    fileInput.addEventListener("change", () => {
-        const file = fileInput.files && fileInput.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            avatarPreview.src = event.target.result;
-            avatarPreview.hidden = false;
-            avatarPlus.hidden = true;
-        };
-        reader.readAsDataURL(file);
-    });
-
-    document.querySelectorAll("[data-onboard-next]").forEach((button) => {
-        button.addEventListener("click", () => {
-            if (currentStep < 3) {
-                showStep(currentStep + 1);
-            }
-        });
-    });
-
-    async function submitProfile() {
-        if (!accountCreated) {
-            showFormError("Create your account first before finishing profile setup.");
-            credentialsPhase.hidden = false;
-            onboardingPhase.hidden = true;
-            return;
-        }
-
-        const csrf = getCsrfToken(form);
-        const formData = new FormData();
-        formData.append("csrfmiddlewaretoken", csrf);
-        if (fileInput.files && fileInput.files[0]) {
-            formData.append("profile_picture", fileInput.files[0]);
-        }
-        formData.append("username", usernameInput.value.trim());
-        formData.append("display_name", nameInput.value.trim());
-        formData.append("birthday_date", birthdayInput.value);
-
-        finishBtn.disabled = true;
-        setButtonLabel(finishBtn, "Saving profile...");
-        showFormError("");
-
-        try {
-            const response = await fetch(profileUrl, {
-                method: "POST",
-                body: formData,
-                headers: ajaxHeaders(form),
-                credentials: "same-origin",
-            });
-
-            if (response.status === 403) {
-                showFormError("Session expired. Please refresh the page and try again.");
-                finishBtn.disabled = false;
-                setButtonLabel(finishBtn, "Finish");
-                return;
-            }
-
-            const data = await response.json();
-
-            if (!response.ok || !data.success) {
-                const message = extractResponseError(data, "Could not save your profile. Please try again.");
-                showFormError(message);
-                finishBtn.disabled = false;
-                setButtonLabel(finishBtn, "Finish");
-                return;
-            }
-
-            successModal.hidden = false;
-            window.setTimeout(() => {
-                window.location.href = data.redirect || "/dashboard/";
-            }, 1200);
-        } catch (error) {
-            showFormError("Could not save your profile. Please try again.");
-            finishBtn.disabled = false;
-            setButtonLabel(finishBtn, "Finish");
-        }
-    }
-
-    finishBtn.addEventListener("click", submitProfile);
 }
 
 document.addEventListener("DOMContentLoaded", () => {

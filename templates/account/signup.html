@@ -10,114 +10,53 @@
         <span class="auth-topbar-spacer"></span>
     </div>
 
-    <form method="post" action="{% url 'account_signup' %}" class="auth-form" id="signup-form" novalidate data-profile-url="{% url 'profile-setup' %}">
+    <form method="post" action="{% url 'account_signup' %}" class="auth-form" id="signup-form" novalidate>
         {% csrf_token %}
         <div class="auth-error" id="signup-form-error" hidden></div>
 
-        <div id="phase-credentials">
-            <h1>Create your account</h1>
+        <h1>Create your account</h1>
+        <p class="auth-lede">We’ll send a verification link to your email before you can sign in.</p>
 
-            <div class="field">
-                <label for="id_email">Email</label>
-                <input type="email" name="email" id="id_email" class="auth-input" placeholder="you@example.com" required autofocus {% if form.email.value %}value="{{ form.email.value }}"{% endif %}>
-            </div>
-
-            <div class="field">
-                <label for="id_password1">Password</label>
-                <div class="password-wrap">
-                    <input type="password" name="password1" id="id_password1" class="auth-input" placeholder="Create a password" required autocomplete="new-password">
-                    <button type="button" class="password-toggle" data-target="id_password1" aria-label="Show password">
-                        <i class="fa-regular fa-eye"></i>
-                    </button>
-                </div>
-                <span class="auth-hint" id="password-hint" hidden></span>
-            </div>
-
-            <div class="field confirm-step" id="confirm-step" hidden>
-                <label for="id_password2">Confirm Password</label>
-                <div class="password-wrap">
-                    <input type="password" name="password2" id="id_password2" class="auth-input" placeholder="Confirm your password" autocomplete="new-password">
-                    <button type="button" class="password-toggle" data-target="id_password2" aria-label="Show password">
-                        <i class="fa-regular fa-eye"></i>
-                    </button>
-                </div>
-                <span class="auth-hint" id="confirm-hint" hidden></span>
-            </div>
-
-            {% if redirect_field_value %}
-            <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
-            {% endif %}
-
-            <button type="button" class="auth-submit btn-with-icon" id="signup-continue">
-                <span class="btn-label">Continue</span>
-                <svg aria-hidden="true"><use href="#icon-arrow-right"/></svg>
-            </button>
-
-            <p class="auth-meta">Already have an account? <a href="{% url 'account_login' %}">Login</a></p>
+        <div class="field">
+            <label for="id_email">Email</label>
+            <input type="email" name="email" id="id_email" class="auth-input" placeholder="you@example.com" required autofocus {% if form.email.value %}value="{{ form.email.value }}"{% endif %}>
+            {% for error in form.email.errors %}<span class="auth-error">{{ error }}</span>{% endfor %}
         </div>
 
-        <div id="phase-onboarding" hidden>
-            <div class="step-dots">
-                <span class="step-dot active" data-step-dot="1"></span>
-                <span class="step-dot" data-step-dot="2"></span>
-                <span class="step-dot" data-step-dot="3"></span>
-            </div>
-
-            <div class="onboard-step active" data-onboard-step="1">
-                <h2>Add a profile photo</h2>
-                <input type="file" name="profile_picture" id="id_profile_picture" accept="image/*" hidden>
-                <button type="button" class="avatar-picker" id="avatar-picker" aria-label="Upload profile photo">
-                    <img id="avatar-preview" alt="" hidden>
-                    <i class="fa-solid fa-plus" id="avatar-plus"></i>
-                </button>
-                <div class="onboard-actions">
-                    <button type="button" class="btn-skip" data-onboard-next>Skip</button>
-                    <button type="button" class="btn-next btn-with-icon" data-onboard-next>
-                        <span class="btn-label">Next</span>
-                        <svg aria-hidden="true"><use href="#icon-arrow-right"/></svg>
-                    </button>
-                </div>
-            </div>
-
-            <div class="onboard-step" data-onboard-step="2" hidden>
-                <h2>Tell us about you</h2>
-                <div class="field">
-                    <label for="onboard-username">Username</label>
-                    <input type="text" name="username" id="onboard-username" class="auth-input" placeholder="@yourname">
-                </div>
-                <div class="field">
-                    <label for="onboard-name">Full Name</label>
-                    <input type="text" name="display_name" id="onboard-name" class="auth-input" placeholder="Your name">
-                </div>
-                <div class="onboard-actions">
-                    <button type="button" class="btn-skip" data-onboard-next>Skip</button>
-                    <button type="button" class="btn-next btn-with-icon" data-onboard-next>
-                        <span class="btn-label">Next</span>
-                        <svg aria-hidden="true"><use href="#icon-arrow-right"/></svg>
-                    </button>
-                </div>
-            </div>
-
-            <div class="onboard-step" data-onboard-step="3" hidden>
-                <h2>When is your birthday?</h2>
-                <div class="field">
-                    <label for="onboard-birthday">Birthday</label>
-                    <input type="date" name="birthday_date" id="onboard-birthday" class="auth-input">
-                </div>
-                <button type="button" class="auth-submit btn-with-icon" id="signup-finish">
-                    <span class="btn-label">Finish</span>
-                    <svg aria-hidden="true"><use href="#icon-arrow-right"/></svg>
+        <div class="field">
+            <label for="id_password1">Password</label>
+            <div class="password-wrap">
+                <input type="password" name="password1" id="id_password1" class="auth-input" placeholder="Create a password" required autocomplete="new-password">
+                <button type="button" class="password-toggle" data-target="id_password1" aria-label="Show password">
+                    <i class="fa-regular fa-eye"></i>
                 </button>
             </div>
+            <span class="auth-hint" id="password-hint" hidden></span>
+            {% for error in form.password1.errors %}<span class="auth-error">{{ error }}</span>{% endfor %}
         </div>
+
+        <div class="field confirm-step" id="confirm-step" hidden>
+            <label for="id_password2">Confirm Password</label>
+            <div class="password-wrap">
+                <input type="password" name="password2" id="id_password2" class="auth-input" placeholder="Confirm your password" autocomplete="new-password">
+                <button type="button" class="password-toggle" data-target="id_password2" aria-label="Show password">
+                    <i class="fa-regular fa-eye"></i>
+                </button>
+            </div>
+            <span class="auth-hint" id="confirm-hint" hidden></span>
+            {% for error in form.password2.errors %}<span class="auth-error">{{ error }}</span>{% endfor %}
+        </div>
+
+        {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+        {% endif %}
+
+        <button type="button" class="auth-submit btn-with-icon" id="signup-continue">
+            <span class="btn-label">Continue</span>
+            <svg aria-hidden="true"><use href="#icon-arrow-right"/></svg>
+        </button>
+
+        <p class="auth-meta">Already have an account? <a href="{% url 'account_login' %}">Login</a></p>
     </form>
 </section>
-
-<div class="auth-modal" id="signup-success-modal" hidden>
-    <div class="auth-modal-card">
-        <div class="auth-modal-icon"><i class="fa-solid fa-circle-check"></i></div>
-        <h3>Your profile is all set up</h3>
-        <p>Redirecting to dashboard...</p>
-    </div>
-</div>
 {% endblock %}

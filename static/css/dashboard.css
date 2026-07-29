@@ -988,6 +988,13 @@ button.dash-btn-primary[type="submit"],
     color: rgba(34, 34, 34, 0.55);
 }
 
+.withdraw-otp-input {
+    letter-spacing: 0.35em;
+    font-weight: 700;
+    font-size: 1.15rem;
+    text-align: center;
+}
+
 .dash-modal-card .field {
     margin-bottom: 0.85rem;
 }
