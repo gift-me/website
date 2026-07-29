@@ -77,10 +77,12 @@ function ajaxHeaders(form) {
     return {
         "X-Requested-With": "XMLHttpRequest",
         "X-CSRFToken": csrf,
+        Accept: "application/json",
     };
 }
 
 function extractResponseError(data, fallback) {
+    if (data.message) return data.message;
     if (data.errors) {
         const flat = Object.values(data.errors).flat().filter(Boolean);
         if (flat.length) return flat[0];
@@ -92,6 +94,17 @@ function extractResponseError(data, fallback) {
         }
     }
     return fallback;
+}
+
+function debugAlert(enabled, title, details) {
+    if (!enabled) return;
+    const lines = [title];
+    Object.entries(details || {}).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === "") return;
+        const text = typeof value === "string" ? value : JSON.stringify(value);
+        lines.push(`${key}: ${text.slice(0, 1200)}`);
+    });
+    window.alert(lines.join("\n\n"));
 }
 
 function initPasswordToggles() {
@@ -123,6 +136,7 @@ function initSignupFlow() {
     const form = document.getElementById("signup-form");
     if (!form) return;
 
+    const showDebug = form.dataset.debug === "1";
     const emailInput = document.getElementById("id_email");
     const passwordInput = document.getElementById("id_password1");
     const confirmInput = document.getElementById("id_password2");
@@ -156,6 +170,14 @@ function initSignupFlow() {
 
     async function createAccount() {
         const csrf = getCsrfToken(form);
+        if (!csrf) {
+            const err = new Error("Missing CSRF token. Refresh the page and try again.");
+            debugAlert(showDebug, "Signup CSRF missing", {
+                cookie: document.cookie,
+            });
+            throw err;
+        }
+
         const formData = new FormData();
         formData.append("csrfmiddlewaretoken", csrf);
         formData.append("email", emailInput.value.trim());
@@ -169,18 +191,23 @@ function initSignupFlow() {
             credentials: "same-origin",
         });
 
-        let data = {};
         const raw = await response.text();
+        let data = {};
         try {
             data = raw ? JSON.parse(raw) : {};
         } catch (error) {
-            if (response.status === 403) {
-                throw new Error("Security check failed. Refresh the page and try again.");
-            }
-            if (response.status >= 500) {
-                throw new Error("Server error while creating your account. Please try again shortly.");
-            }
-            throw new Error("Could not create account. Please try again.");
+            const friendly =
+                response.status === 403
+                    ? "Security check failed. Refresh the page and try again."
+                    : response.status >= 500
+                      ? "Server error while creating your account. Please try again shortly."
+                      : "Could not create account. Please try again.";
+            debugAlert(showDebug, "Signup returned non-JSON", {
+                status: response.status,
+                contentType: response.headers.get("content-type"),
+                body: raw.slice(0, 1500),
+            });
+            throw new Error(friendly);
         }
 
         if (response.ok && (data.success || data.location || data.status === 200)) {
@@ -188,7 +215,14 @@ function initSignupFlow() {
             return;
         }
 
-        throw new Error(extractResponseError(data, "Could not create account. Please try again."));
+        const message = extractResponseError(data, "Could not create account. Please try again.");
+        debugAlert(showDebug, "Signup failed", {
+            status: response.status,
+            message,
+            debug: data.debug,
+            raw: JSON.stringify(data).slice(0, 1500),
+        });
+        throw new Error(message);
     }
 
     if (!continueBtn) return;
@@ -232,7 +266,7 @@ function initSignupFlow() {
         try {
             await createAccount();
         } catch (error) {
-            showFormError(error.message);
+            showFormError(error.message || "Could not create account. Please try again.");
             continueBtn.disabled = false;
             setButtonLabel(continueBtn, "Continue");
         }

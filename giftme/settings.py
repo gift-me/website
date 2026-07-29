@@ -43,6 +43,8 @@ SECRET_KEY = os.environ.get(
     "django-insecure-!wqo72-*lsuvau8a#hgy_00_oacv+xz-+&hpyo9ae47s8dytsx",
 )
 DEBUG = _env_bool("DEBUG", True)
+# Use Postgres when IS_PRODUCTION=True (independent of DEBUG so you can debug on Railway).
+IS_PRODUCTION = _env_bool("IS_PRODUCTION", False)
 
 ALLOWED_HOSTS = _env_list("ALLOWED_HOSTS", "localhost,127.0.0.1,.railway.app")
 RAILWAY_PUBLIC_DOMAIN = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "")
@@ -102,6 +104,7 @@ MIDDLEWARE += [
     'allauth.account.middleware.AccountMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'birthdays.middleware.AjaxJsonErrorMiddleware',
 ]
 
 ROOT_URLCONF = 'giftme.urls'
@@ -127,20 +130,13 @@ WSGI_APPLICATION = 'giftme.wsgi.application'
 
 
 # Database
-# DEBUG=True  → SQLite (local)
-# DEBUG=False → Postgres via DATABASE_URL
-if DEBUG:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
-    }
-else:
+# IS_PRODUCTION=False → SQLite (local)
+# IS_PRODUCTION=True  → Postgres via DATABASE_URL
+if IS_PRODUCTION:
     database_url = os.environ.get("DATABASE_URL", "").strip()
     if not database_url:
         raise ImproperlyConfigured(
-            "DEBUG is False but DATABASE_URL is not set. "
+            "IS_PRODUCTION is True but DATABASE_URL is not set. "
             "Add a Postgres connection string to your .env."
         )
     import dj_database_url
@@ -151,6 +147,13 @@ else:
             conn_max_age=600,
             conn_health_checks=True,
         )
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
 
 
@@ -195,7 +198,7 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-if not DEBUG:
+if IS_PRODUCTION:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
     SESSION_COOKIE_SECURE = True
@@ -266,10 +269,10 @@ else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # Redis cache (optional — falls back to local memory)
-# Ignore localhost Redis in production; Railway has no Redis on 127.0.0.1.
+# Ignore localhost Redis in production; use Railway Redis URL instead.
 REDIS_URL = os.environ.get("REDIS_URL", "").strip()
 _redis_is_local = REDIS_URL.startswith(("redis://127.0.0.1", "redis://localhost"))
-if REDIS_URL and not (not DEBUG and _redis_is_local):
+if REDIS_URL and not (IS_PRODUCTION and _redis_is_local):
     CACHES = {
         "default": {
             "BACKEND": "django_redis.cache.RedisCache",

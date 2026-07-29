@@ -10,7 +10,7 @@
         <span class="auth-topbar-spacer"></span>
     </div>
 
-    <form method="post" action="{% url 'account_signup' %}" class="auth-form" id="signup-form" novalidate>
+    <form method="post" action="{% url 'account_signup' %}" class="auth-form" id="signup-form" novalidate data-debug="{% if show_client_debug %}1{% else %}0{% endif %}">
         {% csrf_token %}
         <div class="auth-error" id="signup-form-error" hidden></div>
 

@@ -1,5 +1,9 @@
+import logging
+import traceback
+
 from allauth.account.forms import ChangePasswordForm
 from allauth.account.views import SignupView
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -9,9 +13,54 @@ from django.urls import reverse
 from .models import UserProfile
 from .profile_utils import save_profile_from_request
 
+logger = logging.getLogger(__name__)
+
 
 class CustomSignupView(SignupView):
     template_name = "account/signup.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            return super().dispatch(request, *args, **kwargs)
+        except Exception as exc:
+            logger.exception("Signup dispatch failed")
+            if self._wants_json(request):
+                return self._error_json(exc, status=500)
+            raise
+
+    def form_valid(self, form):
+        try:
+            return super().form_valid(form)
+        except Exception as exc:
+            logger.exception("Signup form_valid failed")
+            if self._wants_json(self.request):
+                return self._error_json(exc, status=500)
+            raise
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["show_client_debug"] = settings.DEBUG
+        return ctx
+
+    @staticmethod
+    def _wants_json(request):
+        return request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+    @staticmethod
+    def _error_json(exc, status=500):
+        message = str(exc) if settings.DEBUG else "Server error while creating your account. Please try again shortly."
+        payload = {
+            "success": False,
+            "errors": {"__all__": [message]},
+            "status": status,
+        }
+        if settings.DEBUG:
+            payload["debug"] = {
+                "type": type(exc).__name__,
+                "detail": str(exc),
+                "traceback": traceback.format_exc()[:4000],
+            }
+        return JsonResponse(payload, status=status)
 
 
 def _settings_context(profile, password_form=None, active_tab="profile", error=None):
