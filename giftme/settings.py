@@ -55,6 +55,16 @@ if RAILWAY_PUBLIC_DOMAIN:
     if railway_origin not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(railway_origin)
 
+# Production HTTPS hosts must be in CSRF_TRUSTED_ORIGINS or POSTs return HTML 403
+# (signup AJAX then fails with "Unexpected token '<'").
+_local_hosts = {"localhost", "127.0.0.1", "[::1]"}
+for host in ALLOWED_HOSTS:
+    if not host or host.startswith(".") or host in _local_hosts:
+        continue
+    origin = f"https://{host}"
+    if origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(origin)
+
 
 # Application definition
 
@@ -187,6 +197,9 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 SITE_ID = 1
 
@@ -253,8 +266,10 @@ else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # Redis cache (optional — falls back to local memory)
-REDIS_URL = os.environ.get("REDIS_URL", "")
-if REDIS_URL:
+# Ignore localhost Redis in production; Railway has no Redis on 127.0.0.1.
+REDIS_URL = os.environ.get("REDIS_URL", "").strip()
+_redis_is_local = REDIS_URL.startswith(("redis://127.0.0.1", "redis://localhost"))
+if REDIS_URL and not (not DEBUG and _redis_is_local):
     CACHES = {
         "default": {
             "BACKEND": "django_redis.cache.RedisCache",

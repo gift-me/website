@@ -170,9 +170,16 @@ function initSignupFlow() {
         });
 
         let data = {};
+        const raw = await response.text();
         try {
-            data = await response.json();
+            data = raw ? JSON.parse(raw) : {};
         } catch (error) {
+            if (response.status === 403) {
+                throw new Error("Security check failed. Refresh the page and try again.");
+            }
+            if (response.status >= 500) {
+                throw new Error("Server error while creating your account. Please try again shortly.");
+            }
             throw new Error("Could not create account. Please try again.");
         }
 
