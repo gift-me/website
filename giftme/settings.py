@@ -14,6 +14,8 @@ from decimal import Decimal
 from pathlib import Path
 import os
 
+from django.core.exceptions import ImproperlyConfigured
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 try:
@@ -41,6 +43,8 @@ SECRET_KEY = os.environ.get(
     "django-insecure-!wqo72-*lsuvau8a#hgy_00_oacv+xz-+&hpyo9ae47s8dytsx",
 )
 DEBUG = _env_bool("DEBUG", True)
+# Use Postgres when IS_PRODUCTION=True (independent of DEBUG so you can debug on Railway).
+IS_PRODUCTION = _env_bool("IS_PRODUCTION", False)
 
 ALLOWED_HOSTS = _env_list("ALLOWED_HOSTS", "localhost,127.0.0.1,.railway.app")
 RAILWAY_PUBLIC_DOMAIN = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "")
@@ -52,6 +56,16 @@ if RAILWAY_PUBLIC_DOMAIN:
     railway_origin = f"https://{RAILWAY_PUBLIC_DOMAIN}"
     if railway_origin not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(railway_origin)
+
+# Production HTTPS hosts must be in CSRF_TRUSTED_ORIGINS or POSTs return HTML 403
+# (signup AJAX then fails with "Unexpected token '<'").
+_local_hosts = {"localhost", "127.0.0.1", "[::1]"}
+for host in ALLOWED_HOSTS:
+    if not host or host.startswith(".") or host in _local_hosts:
+        continue
+    origin = f"https://{host}"
+    if origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(origin)
 
 
 # Application definition
@@ -90,6 +104,7 @@ MIDDLEWARE += [
     'allauth.account.middleware.AccountMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'birthdays.middleware.AjaxJsonErrorMiddleware',
 ]
 
 ROOT_URLCONF = 'giftme.urls'
@@ -115,10 +130,15 @@ WSGI_APPLICATION = 'giftme.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-
-database_url = os.environ.get("DATABASE_URL")
-if database_url:
+# IS_PRODUCTION=False → SQLite (local)
+# IS_PRODUCTION=True  → Postgres via DATABASE_URL
+if IS_PRODUCTION:
+    database_url = os.environ.get("DATABASE_URL", "").strip()
+    if not database_url:
+        raise ImproperlyConfigured(
+            "IS_PRODUCTION is True but DATABASE_URL is not set. "
+            "Add a Postgres connection string to your .env."
+        )
     import dj_database_url
 
     DATABASES = {
@@ -178,8 +198,11 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-if not DEBUG:
+if IS_PRODUCTION:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 SITE_ID = 1
 
@@ -189,10 +212,13 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 ACCOUNT_LOGIN_METHODS = {"email"}
-ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
-ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True
+ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_LOGOUT_ON_GET = True
+ACCOUNT_EMAIL_SUBJECT_PREFIX = "[GiftMe] "
+ACCOUNT_ADAPTER = "birthdays.adapters.AccountAdapter"
 
 LOGIN_REDIRECT_URL = "dashboard"
 LOGOUT_REDIRECT_URL = "home"
@@ -222,21 +248,32 @@ MPESA_B2C_TIMEOUT_URL = os.environ.get("MPESA_B2C_TIMEOUT_URL", "")
 WITHDRAWAL_MIN_AMOUNT = 500
 WITHDRAWAL_OTP_EXPIRY_MINUTES = int(os.environ.get("WITHDRAWAL_OTP_EXPIRY_MINUTES", "10"))
 
-# Email (withdrawal OTP)
-EMAIL_BACKEND = os.environ.get(
-    "EMAIL_BACKEND",
-    "django.core.mail.backends.console.EmailBackend",
-)
+# Email (verification, password reset, withdrawal OTP)
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() in ("1", "true", "yes")
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "GiftMe <hello@giftme.app>")
+EMAIL_USE_TLS = _env_bool("EMAIL_USE_TLS", True)
+EMAIL_USE_SSL = _env_bool("EMAIL_USE_SSL", False)
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "GiftMe <info@giftme.co.ke>")
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+# Prefer SMTP whenever a host is configured. Console backend only dumps to the terminal.
+_email_backend = os.environ.get("EMAIL_BACKEND", "").strip()
+if EMAIL_HOST and (
+    not _email_backend
+    or _email_backend.endswith("console.EmailBackend")
+):
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+elif _email_backend:
+    EMAIL_BACKEND = _email_backend
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # Redis cache (optional — falls back to local memory)
-REDIS_URL = os.environ.get("REDIS_URL", "")
-if REDIS_URL:
+# Ignore localhost Redis in production; use Railway Redis URL instead.
+REDIS_URL = os.environ.get("REDIS_URL", "").strip()
+_redis_is_local = REDIS_URL.startswith(("redis://127.0.0.1", "redis://localhost"))
+if REDIS_URL and not (IS_PRODUCTION and _redis_is_local):
     CACHES = {
         "default": {
             "BACKEND": "django_redis.cache.RedisCache",

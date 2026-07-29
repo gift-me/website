@@ -593,7 +593,7 @@
         <button type="button" class="dash-modal-close" data-close-modal="withdraw-modal" aria-label="Close" title="Close">&times;</button>
 
         <h2 id="withdraw-modal-title">Withdraw</h2>
-        <p class="dash-modal-sub" id="withdraw-modal-sub">Minimum withdrawal KES 500. We will email you a verification code before sending funds.</p>
+        <p class="dash-modal-sub" id="withdraw-modal-sub">Minimum withdrawal KES 500. We’ll email a one-time code to <strong>{{ user.email }}</strong> before sending funds.</p>
         <p class="dash-modal-error" id="withdraw-modal-error" hidden></p>
 
         <div id="withdraw-state-form">
@@ -621,9 +621,9 @@
                 {% csrf_token %}
                 <div class="modal-body-fields">
                     <div class="field">
-                        <label for="withdraw-code">Verification code</label>
-                        <input id="withdraw-code" name="code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="6-digit code" autocomplete="one-time-code" required>
-                        <small class="field-hint" id="withdraw-verify-hint">Enter the code sent to your email.</small>
+                        <label for="withdraw-code">Email verification code</label>
+                        <input id="withdraw-code" name="code" class="auth-input withdraw-otp-input" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="••••••" autocomplete="one-time-code" required>
+                        <small class="field-hint" id="withdraw-verify-hint">Enter the 6-digit code sent to {{ user.email }}.</small>
                     </div>
                 </div>
                 <div class="modal-actions">

@@ -72,22 +72,17 @@ function getCsrfToken(form) {
     return input ? input.value : "";
 }
 
-function syncCsrfInput(form) {
-    const token = getCsrfFromCookie();
-    if (!token || !form) return;
-    const input = form.querySelector("[name=csrfmiddlewaretoken]");
-    if (input) input.value = token;
-}
-
 function ajaxHeaders(form) {
     const csrf = getCsrfToken(form);
     return {
         "X-Requested-With": "XMLHttpRequest",
         "X-CSRFToken": csrf,
+        Accept: "application/json",
     };
 }
 
 function extractResponseError(data, fallback) {
+    if (data.message) return data.message;
     if (data.errors) {
         const flat = Object.values(data.errors).flat().filter(Boolean);
         if (flat.length) return flat[0];
@@ -99,6 +94,17 @@ function extractResponseError(data, fallback) {
         }
     }
     return fallback;
+}
+
+function debugAlert(enabled, title, details) {
+    if (!enabled) return;
+    const lines = [title];
+    Object.entries(details || {}).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === "") return;
+        const text = typeof value === "string" ? value : JSON.stringify(value);
+        lines.push(`${key}: ${text.slice(0, 1200)}`);
+    });
+    window.alert(lines.join("\n\n"));
 }
 
 function initPasswordToggles() {
@@ -130,75 +136,48 @@ function initSignupFlow() {
     const form = document.getElementById("signup-form");
     if (!form) return;
 
-    const profileUrl = form.dataset.profileUrl;
-    const credentialsPhase = document.getElementById("phase-credentials");
-    const onboardingPhase = document.getElementById("phase-onboarding");
+    const showDebug = form.dataset.debug === "1";
     const emailInput = document.getElementById("id_email");
     const passwordInput = document.getElementById("id_password1");
     const confirmInput = document.getElementById("id_password2");
     const confirmStep = document.getElementById("confirm-step");
     const continueBtn = document.getElementById("signup-continue");
-    const finishBtn = document.getElementById("signup-finish");
     const passwordHint = document.getElementById("password-hint");
     const confirmHint = document.getElementById("confirm-hint");
-    const successModal = document.getElementById("signup-success-modal");
 
-    if (successModal) {
-        successModal.hidden = true;
-    }
-
-    const fileInput = document.getElementById("id_profile_picture");
-    const avatarPicker = document.getElementById("avatar-picker");
-    const avatarPreview = document.getElementById("avatar-preview");
-    const avatarPlus = document.getElementById("avatar-plus");
-    const usernameInput = document.getElementById("onboard-username");
-    const nameInput = document.getElementById("onboard-name");
-    const birthdayInput = document.getElementById("onboard-birthday");
-
-    const steps = Array.from(document.querySelectorAll("[data-onboard-step]"));
-    const dots = Array.from(document.querySelectorAll("[data-step-dot]"));
-    let currentStep = 1;
     let confirmUnlocked = false;
-    let accountCreated = false;
-
-    function showStep(step) {
-        currentStep = step;
-        steps.forEach((panel) => {
-            const active = Number(panel.dataset.onboardStep) === step;
-            panel.hidden = !active;
-            panel.classList.toggle("active", active);
-        });
-        dots.forEach((dot) => {
-            dot.classList.toggle("active", Number(dot.dataset.stepDot) === step);
-        });
-    }
 
     function resetConfirmStep() {
         confirmUnlocked = false;
-        accountCreated = false;
-        confirmStep.hidden = true;
-        confirmInput.value = "";
-        confirmInput.removeAttribute("required");
+        if (confirmStep) confirmStep.hidden = true;
+        if (confirmInput) {
+            confirmInput.value = "";
+            confirmInput.removeAttribute("required");
+        }
         setButtonLabel(continueBtn, "Continue");
-        continueBtn.disabled = false;
+        if (continueBtn) continueBtn.disabled = false;
         setHint(confirmHint, "", false);
     }
 
     function unlockConfirmStep() {
         confirmUnlocked = true;
-        confirmStep.hidden = false;
-        confirmInput.setAttribute("required", "required");
-        confirmInput.focus();
-    }
-
-    function startOnboarding() {
-        credentialsPhase.hidden = true;
-        onboardingPhase.hidden = false;
-        showStep(1);
+        if (confirmStep) confirmStep.hidden = false;
+        if (confirmInput) {
+            confirmInput.setAttribute("required", "required");
+            confirmInput.focus();
+        }
     }
 
     async function createAccount() {
         const csrf = getCsrfToken(form);
+        if (!csrf) {
+            const err = new Error("Missing CSRF token. Refresh the page and try again.");
+            debugAlert(showDebug, "Signup CSRF missing", {
+                cookie: document.cookie,
+            });
+            throw err;
+        }
+
         const formData = new FormData();
         formData.append("csrfmiddlewaretoken", csrf);
         formData.append("email", emailInput.value.trim());
@@ -212,16 +191,41 @@ function initSignupFlow() {
             credentials: "same-origin",
         });
 
-        const data = await response.json();
+        const raw = await response.text();
+        let data = {};
+        try {
+            data = raw ? JSON.parse(raw) : {};
+        } catch (error) {
+            const friendly =
+                response.status === 403
+                    ? "Security check failed. Refresh the page and try again."
+                    : response.status >= 500
+                      ? "Server error while creating your account. Please try again shortly."
+                      : "Could not create account. Please try again.";
+            debugAlert(showDebug, "Signup returned non-JSON", {
+                status: response.status,
+                contentType: response.headers.get("content-type"),
+                body: raw.slice(0, 1500),
+            });
+            throw new Error(friendly);
+        }
 
-        if (response.ok && (data.success || data.location)) {
-            accountCreated = true;
-            syncCsrfInput(form);
+        if (response.ok && (data.success || data.location || data.status === 200)) {
+            window.location.href = data.location || "/accounts/confirm-email/";
             return;
         }
 
-        throw new Error(extractResponseError(data, "Could not create account. Please try again."));
+        const message = extractResponseError(data, "Could not create account. Please try again.");
+        debugAlert(showDebug, "Signup failed", {
+            status: response.status,
+            message,
+            debug: data.debug,
+            raw: JSON.stringify(data).slice(0, 1500),
+        });
+        throw new Error(message);
     }
+
+    if (!continueBtn) return;
 
     continueBtn.addEventListener("click", async () => {
         setHint(passwordHint, "", false);
@@ -261,10 +265,8 @@ function initSignupFlow() {
 
         try {
             await createAccount();
-            startOnboarding();
         } catch (error) {
-            showFormError(error.message);
-        } finally {
+            showFormError(error.message || "Could not create account. Please try again.");
             continueBtn.disabled = false;
             setButtonLabel(continueBtn, "Continue");
         }
@@ -284,88 +286,6 @@ function initSignupFlow() {
             resetConfirmStep();
         }
     });
-
-    avatarPicker.addEventListener("click", () => fileInput.click());
-
-    fileInput.addEventListener("change", () => {
-        const file = fileInput.files && fileInput.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            avatarPreview.src = event.target.result;
-            avatarPreview.hidden = false;
-            avatarPlus.hidden = true;
-        };
-        reader.readAsDataURL(file);
-    });
-
-    document.querySelectorAll("[data-onboard-next]").forEach((button) => {
-        button.addEventListener("click", () => {
-            if (currentStep < 3) {
-                showStep(currentStep + 1);
-            }
-        });
-    });
-
-    async function submitProfile() {
-        if (!accountCreated) {
-            showFormError("Create your account first before finishing profile setup.");
-            credentialsPhase.hidden = false;
-            onboardingPhase.hidden = true;
-            return;
-        }
-
-        const csrf = getCsrfToken(form);
-        const formData = new FormData();
-        formData.append("csrfmiddlewaretoken", csrf);
-        if (fileInput.files && fileInput.files[0]) {
-            formData.append("profile_picture", fileInput.files[0]);
-        }
-        formData.append("username", usernameInput.value.trim());
-        formData.append("display_name", nameInput.value.trim());
-        formData.append("birthday_date", birthdayInput.value);
-
-        finishBtn.disabled = true;
-        setButtonLabel(finishBtn, "Saving profile...");
-        showFormError("");
-
-        try {
-            const response = await fetch(profileUrl, {
-                method: "POST",
-                body: formData,
-                headers: ajaxHeaders(form),
-                credentials: "same-origin",
-            });
-
-            if (response.status === 403) {
-                showFormError("Session expired. Please refresh the page and try again.");
-                finishBtn.disabled = false;
-                setButtonLabel(finishBtn, "Finish");
-                return;
-            }
-
-            const data = await response.json();
-
-            if (!response.ok || !data.success) {
-                const message = extractResponseError(data, "Could not save your profile. Please try again.");
-                showFormError(message);
-                finishBtn.disabled = false;
-                setButtonLabel(finishBtn, "Finish");
-                return;
-            }
-
-            successModal.hidden = false;
-            window.setTimeout(() => {
-                window.location.href = data.redirect || "/dashboard/";
-            }, 1200);
-        } catch (error) {
-            showFormError("Could not save your profile. Please try again.");
-            finishBtn.disabled = false;
-            setButtonLabel(finishBtn, "Finish");
-        }
-    }
-
-    finishBtn.addEventListener("click", submitProfile);
 }
 
 document.addEventListener("DOMContentLoaded", () => {

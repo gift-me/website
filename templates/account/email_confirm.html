@@ -1,0 +1,45 @@
+{% extends "auth_base.html" %}
+{% load account %}
+{% block title %}Confirm email | GiftMe{% endblock %}
+{% block content %}
+<section class="auth-card">
+    <div class="auth-topbar">
+        <a href="{% url 'account_login' %}" class="auth-back-inline" aria-label="Back to login">
+            <i class="fa-solid fa-arrow-left"></i>
+        </a>
+        <div class="auth-brand"><i class="fa-solid fa-gift"></i> GiftMe</div>
+        <span class="auth-topbar-spacer"></span>
+    </div>
+
+    <h1>Confirm your email</h1>
+
+    {% if confirmation %}
+        {% user_display confirmation.email_address.user as user_display %}
+        {% if can_confirm %}
+            <p class="auth-lede">
+                Confirm <strong>{{ confirmation.email_address.email }}</strong> for {{ user_display }} to finish setting up GiftMe.
+            </p>
+            <form method="post" action="{% url 'account_confirm_email' confirmation.key %}" class="auth-form">
+                {% csrf_token %}
+                {% if redirect_field_value %}
+                <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+                {% endif %}
+                <button type="submit" class="auth-submit btn-with-icon">
+                    <span class="btn-label">Confirm email</span>
+                    <svg aria-hidden="true"><use href="#icon-arrow-right"/></svg>
+                </button>
+            </form>
+        {% else %}
+            <p class="auth-lede">This email can’t be confirmed because it is already verified on another account.</p>
+            <p class="auth-meta"><a href="{% url 'account_login' %}">Back to login</a></p>
+        {% endif %}
+    {% else %}
+        <p class="auth-lede">This confirmation link is invalid or has expired. Sign up again or request a new verification email.</p>
+        <p class="auth-meta">
+            <a href="{% url 'account_signup' %}">Create an account</a>
+            ·
+            <a href="{% url 'account_login' %}">Login</a>
+        </p>
+    {% endif %}
+</section>
+{% endblock %}

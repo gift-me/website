@@ -11,6 +11,7 @@
     </div>
 
     <h1>Welcome back</h1>
+    <p class="auth-lede">Sign in with the email you used to create your GiftMe account.</p>
 
     <form method="post" action="{% url 'account_login' %}" class="auth-form">
         {% csrf_token %}
@@ -25,7 +26,10 @@
         </div>
 
         <div class="field">
-            <label for="id_password">Password</label>
+            <div class="auth-label-row">
+                <label for="id_password">Password</label>
+                <a href="{% url 'account_reset_password' %}" class="auth-forgot">Forgot password?</a>
+            </div>
             <div class="password-wrap">
                 <input type="password" name="password" id="id_password" class="auth-input" placeholder="Your password" required>
                 <button type="button" class="password-toggle" data-target="id_password" aria-label="Show password">

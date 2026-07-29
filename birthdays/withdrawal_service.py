@@ -51,19 +51,34 @@ def _validate_payout_phone(phone_raw):
 
 def _send_otp_email(user, code, amount):
     subject = "Your GiftMe withdrawal verification code"
-    message = (
+    expiry = getattr(settings, "WITHDRAWAL_OTP_EXPIRY_MINUTES", 10)
+    text_message = (
         f"Hi,\n\n"
         f"Your verification code for a KES {int(amount)} withdrawal is: {code}\n\n"
-        f"This code expires in {getattr(settings, 'WITHDRAWAL_OTP_EXPIRY_MINUTES', 10)} minutes.\n"
-        f"If you did not request this withdrawal, you can ignore this email.\n\n"
+        f"This code expires in {expiry} minutes.\n"
+        f"If you did not request this withdrawal, ignore this email.\n\n"
         f"— GiftMe"
     )
+    html_message = f"""
+    <div style="font-family:Inter,Segoe UI,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#222;">
+      <p style="margin:0 0 8px;font-weight:700;color:#E63946;">GiftMe</p>
+      <h2 style="margin:0 0 12px;font-size:20px;">Withdrawal verification</h2>
+      <p style="margin:0 0 16px;color:#555;line-height:1.5;">
+        Use this code to confirm your KES {int(amount)} withdrawal. It expires in {expiry} minutes.
+      </p>
+      <p style="margin:0 0 20px;font-size:28px;letter-spacing:0.28em;font-weight:700;color:#222;">{code}</p>
+      <p style="margin:0;color:#888;font-size:13px;line-height:1.45;">
+        If you did not request this withdrawal, you can ignore this email.
+      </p>
+    </div>
+    """
     send_mail(
         subject,
-        message,
+        text_message,
         settings.DEFAULT_FROM_EMAIL,
         [user.email],
         fail_silently=False,
+        html_message=html_message,
     )
 
 

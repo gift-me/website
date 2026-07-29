@@ -1,0 +1,23 @@
+{% extends "auth_base.html" %}
+{% block title %}Verify your email | GiftMe{% endblock %}
+{% block content %}
+<section class="auth-card">
+    <div class="auth-topbar">
+        <a href="{% url 'home' %}" class="auth-back-inline" aria-label="Back to home">
+            <i class="fa-solid fa-arrow-left"></i>
+        </a>
+        <div class="auth-brand"><i class="fa-solid fa-gift"></i> GiftMe</div>
+        <span class="auth-topbar-spacer"></span>
+    </div>
+
+    <div class="auth-status-icon" aria-hidden="true"><i class="fa-solid fa-shield-halved"></i></div>
+    <h1>Email verification required</h1>
+    <p class="auth-lede">
+        You need to verify your email before using GiftMe. We sent a verification link — open it, then come back and sign in.
+    </p>
+    <a href="{% url 'account_login' %}" class="auth-submit btn-with-icon" style="text-decoration:none;margin-top:1rem;">
+        <span class="btn-label">Go to login</span>
+        <svg aria-hidden="true"><use href="#icon-arrow-right"/></svg>
+    </a>
+</section>
+{% endblock %}
