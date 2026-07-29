@@ -140,6 +140,7 @@ class MpesaClient:
         self.consumer_key = settings.MPESA_CONSUMER_KEY
         self.consumer_secret = settings.MPESA_CONSUMER_SECRET
         self.shortcode = settings.MPESA_SHORTCODE
+        self.till = settings.MPESA_TILL
         self.passkey = settings.MPESA_PASSKEY
         self.callback_url = normalize_callback_url(settings.MPESA_CALLBACK_URL)
         self.transaction_type = settings.MPESA_TRANSACTION_TYPE
@@ -210,11 +211,11 @@ class MpesaClient:
         amount = _parse_whole_kes_amount(amount)
         phone = normalize_phone(phone)
         logger.debug(
-            "[MPESA_STK_REQUEST] callback=%s shortcode=%s phone=%s amount=%s",
-            self.callback_url,
-            self.shortcode,
-            phone,
-            amount,
+            f"[MPESA_STK_REQUEST] \
+            callback_url={self.callback_url} \
+            shortcode={self.shortcode} \
+            phone={phone} \
+            amount={amount}",
         )
         access_token = self.get_access_token()
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -227,7 +228,7 @@ class MpesaClient:
             "TransactionType": self.transaction_type,
             "Amount": amount,
             "PartyA": phone,
-            "PartyB": self.shortcode,
+            "PartyB": self.till,
             "PhoneNumber": phone,
             "CallBackURL": self.callback_url,
             "AccountReference": f"{account_reference}"[:12],
@@ -244,6 +245,7 @@ class MpesaClient:
         try:
             data = response.json()
         except json.JSONDecodeError as exc:
+            print("[MPESA_STK_RESPONSE] status=", response.status_code, "raw=", response.text)
             raise MpesaError("Invalid STK Push response from Daraja.", response.text) from exc
 
         if response.status_code != 200:
@@ -273,13 +275,10 @@ class MpesaClient:
 
         amount = _parse_whole_kes_amount(amount)
         phone = normalize_phone(phone)
-        debug_print(
-            "[MPESA_B2C_REQUEST]",
-            "shortcode=",
+        logger.debug(
+            "[MPESA_B2C_REQUEST] shortcode=%s phone=%s amount=%s",
             self.b2c_shortcode,
-            "phone=",
             phone,
-            "amount=",
             amount,
         )
 
@@ -311,14 +310,14 @@ class MpesaClient:
             raise MpesaError("Invalid B2C response from Daraja.", response.text) from exc
 
         if response.status_code != 200:
-            debug_print("[MPESA_B2C_HTTP_ERROR]", "status=", response.status_code, "data=", data)
+            logger.debug("[MPESA_B2C_HTTP_ERROR] status=%s data=%s", response.status_code, data)
             raise MpesaError(
                 data.get("errorMessage") or data.get("error") or "B2C payment request failed.",
                 data,
             )
 
         if f"{data.get('ResponseCode', '')}" != "0":
-            debug_print("[MPESA_B2C_REJECTED]", data)
+            logger.debug("[MPESA_B2C_REJECTED] %s", data)
             raise MpesaError(
                 data.get("ResponseDescription") or "B2C payment rejected.",
                 data,
