@@ -1,0 +1,33 @@
+{% if top_gifters %}
+
+<section class="gift-leaderboard-section" aria-label="Top gifters">
+
+    <h2 class="gift-leaderboard-title"><i class="fa-solid fa-trophy" aria-hidden="true"></i> Top gifters</h2>
+
+    <div class="gift-leaderboard-rows">
+
+        {% for g in top_gifters %}
+
+        <div class="gift-leaderboard-row">
+
+            <span class="gift-leaderboard-rank">#{{ g.rank }}</span>
+
+            <span class="gift-leaderboard-name">{{ g.name }}</span>
+
+            <span class="gift-leaderboard-meta">{{ g.gifts }} gift{{ g.gifts|pluralize }} · KES {{ g.total|floatformat:0 }}</span>
+
+        </div>
+
+        {% if not forloop.last %}
+
+        <hr class="gift-leaderboard-divider">
+
+        {% endif %}
+
+        {% endfor %}
+
+    </div>
+
+</section>
+
+{% endif %}

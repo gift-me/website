@@ -1,0 +1,6 @@
+<a href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'account_signup' %}{% endif %}" class="ink-btn ink-btn--primary cta-primary{% if class %} {{ class }}{% endif %}">
+    <span class="ink-btn__label">{{ label|default:"Receive Gifts" }}</span>
+    <svg class="ink-btn__icon cta-primary-arrow" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <use href="#icon-cta-arrow"/>
+    </svg>
+</a>

@@ -1,0 +1,138 @@
+{% extends "ops/base.html" %}
+{% load static %}
+{% block ops_heading %}Catalog gifts{% endblock %}
+{% block ops_content %}
+<div class="ops-gifts-page">
+    <div class="ops-section-head">
+        <div>
+            <h2 class="ops-section-title">Gift catalog</h2>
+            <p class="ops-section-sub">Gifts shown on public gifting pages. Lower sort order appears first.</p>
+        </div>
+        <button type="button" class="ops-btn-primary ops-add-gift-btn" id="ops-open-add-gift" title="Add gift">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Add gift
+        </button>
+    </div>
+
+    <section class="ops-panel ops-gifts-list-panel">
+        <div class="ops-table-wrap">
+            <table class="ops-table ops-gifts-table">
+                <thead>
+                    <tr>
+                        <th>Image</th>
+                        <th>Name</th>
+                        <th>Amount</th>
+                        <th>Order</th>
+                        <th>Status</th>
+                        <th class="ops-th-actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for gift in gifts %}
+                    <tr>
+                        <td>
+                            {% if gift.image %}
+                            <img src="{{ gift.image.url }}" alt="" class="ops-gift-thumb">
+                            {% else %}
+                            <span class="ops-gift-thumb ops-gift-thumb-empty">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong>{{ gift.name }}</strong>
+                            {% if gift.description %}<br><span class="ops-cell-muted">{{ gift.description }}</span>{% endif %}
+                        </td>
+                        <td>KES {{ gift.amount|floatformat:0 }}</td>
+                        <td>{{ gift.display_order }}</td>
+                        <td>
+                            {% if gift.is_active %}
+                            <span class="ops-badge ops-badge-completed">Active</span>
+                            {% else %}
+                            <span class="ops-badge ops-badge-pending">Hidden</span>
+                            {% endif %}
+                        </td>
+                        <td class="ops-gifts-actions">
+                            <a href="{% url 'ops-gifts' %}?edit={{ gift.id }}" class="ops-icon-btn" title="Edit gift" aria-label="Edit {{ gift.name }}">
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                            </a>
+                            <form method="post" action="{% url 'ops-gifts-delete' %}" class="ops-inline-form" onsubmit="return confirm('Delete “{{ gift.name }}”?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="gift_id" value="{{ gift.id }}">
+                                <button type="submit" class="ops-icon-btn ops-icon-btn-danger" title="Delete gift" aria-label="Delete {{ gift.name }}">
+                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="ops-table-empty">No catalog gifts yet. Click <strong>Add gift</strong> to create one.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<div class="ops-modal" id="ops-gift-modal" hidden {% if edit_gift %}data-auto-open="1"{% endif %}>
+    <div class="ops-modal-backdrop" data-close-gift-modal></div>
+    <div class="ops-modal-card ops-gift-modal-card">
+        <button type="button" class="ops-modal-close" data-close-gift-modal aria-label="Close">&times;</button>
+        <h2 id="ops-gift-modal-title">{% if edit_gift %}Edit gift{% else %}Add gift{% endif %}</h2>
+        <p class="ops-modal-sub" id="ops-gift-modal-sub">{% if edit_gift %}Update catalog gift details.{% else %}Create a new gift for the public catalog.{% endif %}</p>
+
+        <form class="ops-gifts-form" id="ops-gift-form" method="post" action="{% url 'ops-gifts-save' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="gift_id" id="ops-gift-id" value="{{ edit_gift.id|default:'' }}">
+
+            <div class="ops-gifts-form-grid">
+                <label class="ops-field">
+                    <span>Name</span>
+                    <input type="text" name="name" id="ops-gift-name" value="{{ edit_gift.name|default:'' }}" required maxlength="120" placeholder="Birthday cake">
+                </label>
+                <label class="ops-field">
+                    <span>Amount (KES)</span>
+                    <input type="number" name="amount" id="ops-gift-amount" min="1" step="1" value="{% if edit_gift %}{{ edit_gift.amount|floatformat:0 }}{% endif %}" required placeholder="500">
+                </label>
+                <label class="ops-field ops-field-full">
+                    <span>Description</span>
+                    <input type="text" name="description" id="ops-gift-description" value="{{ edit_gift.description|default:'' }}" maxlength="200" placeholder="Short description (optional)">
+                </label>
+                <label class="ops-field">
+                    <span>Sort order</span>
+                    <input type="number" name="display_order" id="ops-gift-order" min="0" step="1" value="{{ edit_gift.display_order|default:0 }}">
+                </label>
+                <label class="ops-field ops-checkbox-field">
+                    <span>Visibility</span>
+                    <label class="ops-checkbox-label">
+                        <input type="checkbox" name="is_active" id="ops-gift-active" {% if not edit_gift or edit_gift.is_active %}checked{% endif %}>
+                        Active on gift page
+                    </label>
+                </label>
+                <label class="ops-field ops-field-full">
+                    <span>Image</span>
+                    <input type="file" name="image" id="ops-gift-image" accept="image/*" class="ops-file-input" {% if not edit_gift %}required{% endif %}>
+                    <small class="ops-field-hint" id="ops-gift-image-hint">{% if edit_gift %}Leave empty to keep current image.{% else %}Required for new gifts.{% endif %}</small>
+                </label>
+            </div>
+
+            <div class="ops-gift-preview-wrap" id="ops-gift-preview-wrap" {% if not edit_gift %}hidden{% endif %}>
+                <span class="ops-gift-preview-label">Preview</span>
+                <img
+                    id="ops-gift-preview"
+                    class="ops-gift-preview"
+                    src="{% if edit_gift and edit_gift.image %}{{ edit_gift.image.url }}{% endif %}"
+                    alt=""
+                >
+            </div>
+
+            <div class="ops-gifts-form-actions">
+                <button type="submit" class="ops-btn-primary" id="ops-gift-submit">{% if edit_gift %}Save changes{% else %}Add gift{% endif %}</button>
+                <button type="button" class="ops-btn-secondary" data-close-gift-modal>Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block ops_scripts %}
+<script src="{% static 'js/ops-gifts.js' %}"></script>
+{% endblock %}

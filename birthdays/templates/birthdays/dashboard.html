@@ -1,0 +1,660 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}Dashboard | GiftMe{% endblock %}
+
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">{% endblock %}
+
+{% block content %}
+
+<div class="dash">
+
+    <div id="qr-poster-config" hidden data-logo-url="{{ poster_logo_url }}" data-site-url="{{ site_display_url }}"></div>
+
+    {% if profile_incomplete %}
+
+    <div class="dash-notice" id="profile-notice">
+
+        <div class="dash-notice-inner">
+
+            <i class="fa-solid fa-circle-info"></i>
+
+            <div>
+
+                <strong>Complete your profile</strong>
+
+                <p>Add your photo, username, and birthday for a personalized experience.</p>
+
+                <a href="{% url 'profile-setup' %}">Complete now</a>
+
+            </div>
+
+        </div>
+
+        <button type="button" class="dash-notice-close" id="dismiss-profile-notice" aria-label="Close" title="Close">
+
+            <i class="fa-solid fa-xmark"></i>
+
+        </button>
+
+    </div>
+
+    {% endif %}
+
+
+
+    <header class="dash-header">
+
+        <div>
+
+            <h1>Dashboard</h1>
+
+            <p class="dash-sub">Welcome back, {{ display_name }}!</p>
+
+        </div>
+
+        <div class="dash-header-actions">
+
+            <button type="button" class="dash-btn dash-btn-accent" id="open-wishlist-modal" title="Add wishlist">
+
+                <svg class="dash-svg" aria-hidden="true"><use href="#icon-plus"/></svg>
+
+                Add Wishlist
+
+            </button>
+
+            <button type="button" class="dash-btn dash-btn-primary" id="open-withdraw-modal" title="Withdraw funds">
+
+                <svg class="dash-svg dash-svg-light" aria-hidden="true"><use href="#icon-wallet"/></svg>
+
+                Withdraw
+
+            </button>
+
+        </div>
+
+    </header>
+
+
+
+    <section class="dash-share">
+
+        <article class="share-card">
+
+            <div class="share-card-head">
+
+                <span class="share-tag">Gifting link</span>
+
+                <svg class="dash-svg" aria-hidden="true"><use href="#icon-gift"/></svg>
+
+            </div>
+
+            <div class="share-url-box">
+
+                <code id="gift-url">{{ gift_url }}</code>
+
+                <button type="button" class="dash-copy" data-copy-target="gift-url" aria-label="Copy gifting link" title="Copy gifting link">
+
+                    <svg class="dash-svg" aria-hidden="true"><use href="#icon-copy"/></svg>
+
+                </button>
+
+                <button type="button" class="dash-share-wa" data-share-url="{{ gift_url }}" data-share-type="gift" data-display-name="{{ display_name }}" data-is-birthday="{% if is_birthday_today %}1{% else %}0{% endif %}" aria-label="Share gifting link on WhatsApp" title="Share on WhatsApp">
+
+                    <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
+
+                </button>
+
+            </div>
+
+            <a class="dash-link-preview" href="{{ gift_url }}" target="_blank" rel="noopener">Preview gifting page</a>
+
+        </article>
+
+        <article class="share-card share-card-gold">
+
+            <div class="share-card-head">
+
+                <span class="share-tag">Wishlist link</span>
+
+                <svg class="dash-svg" aria-hidden="true"><use href="#icon-link"/></svg>
+
+            </div>
+
+            <div class="share-url-box">
+
+                <code id="wishlist-url">{{ wishlist_url }}</code>
+
+                <button type="button" class="dash-copy" data-copy-target="wishlist-url" aria-label="Copy wishlist link" title="Copy wishlist link">
+
+                    <svg class="dash-svg" aria-hidden="true"><use href="#icon-copy"/></svg>
+
+                </button>
+
+                <button type="button" class="dash-share-wa" data-share-url="{{ wishlist_url }}" data-share-type="wishlist" data-display-name="{{ display_name }}" aria-label="Share wishlist link on WhatsApp" title="Share on WhatsApp">
+
+                    <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
+
+                </button>
+
+            </div>
+
+            <a class="dash-link-preview" href="{{ wishlist_url }}" target="_blank" rel="noopener">Preview wishlist</a>
+
+        </article>
+
+    </section>
+
+
+
+    <section class="dash-kpis">
+
+        <article class="kpi">
+
+            <div class="kpi-icon"><svg aria-hidden="true"><use href="#icon-wallet"/></svg></div>
+
+            <div>
+
+                <span>Current Balance</span>
+
+                <strong>KES {{ available_balance|floatformat:2 }}</strong>
+
+                <small>Ready to withdraw</small>
+
+            </div>
+
+        </article>
+
+        <article class="kpi">
+
+            <div class="kpi-icon"><svg aria-hidden="true"><use href="#icon-chart"/></svg></div>
+
+            <div>
+
+                <span>Total Earned</span>
+
+                <strong>KES {{ total_revenue|floatformat:2 }}</strong>
+
+                <small>All gifts received</small>
+
+            </div>
+
+        </article>
+
+        <article class="kpi">
+
+            <div class="kpi-icon"><svg aria-hidden="true"><use href="#icon-gift"/></svg></div>
+
+            <div>
+
+                <span>Total Gifts</span>
+
+                <strong>{{ gifts_count }}</strong>
+
+                <small>From {{ supporters_count }} in your squad</small>
+
+            </div>
+
+        </article>
+
+    </section>
+
+
+
+    <section class="dash-tabs-wrap card">
+
+        <nav class="dash-tabs">
+
+            <button class="dash-tab active" data-tab-target="supporters-tab">Gift Squad</button>
+
+            <button class="dash-tab" data-tab-target="wishlist-tab">My Wishlist</button>
+
+            <button class="dash-tab" data-tab-target="qrcode-tab">QR Code</button>
+
+            <button class="dash-tab" data-tab-target="withdrawals-tab">Withdrawals</button>
+
+        </nav>
+
+
+
+        <div id="supporters-tab" class="dash-tab-panel active">
+
+            <div class="panel-head">
+
+                <div>
+
+                    <h3>Gift Squad</h3>
+
+                    <p class="muted">{{ gifts_count }} gift{{ gifts_count|pluralize }} received</p>
+
+                </div>
+
+            </div>
+
+            <div class="table-scroll">
+
+                <table>
+
+                    <thead>
+
+                        <tr><th>Name</th><th>Gift</th><th>Message</th><th>Amount</th><th class="th-actions"></th></tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for s in supporters %}
+
+                        <tr>
+
+                            <td>{{ s.display_sender }}</td>
+
+                            <td><span class="pill">{{ s.display_gift_label }}</span></td>
+
+                            <td class="gift-msg-cell" title="{{ s.message }}">{% if s.message %}{{ s.message|truncatechars:42 }}{% else %}—{% endif %}</td>
+
+                            <td class="amount">KES {{ s.amount|floatformat:2 }}</td>
+
+                            <td class="td-actions">
+
+                                <button type="button" class="dash-icon-btn dash-gift-view" title="View details" aria-label="View gift details"
+
+                                    data-sender="{{ s.display_sender }}"
+
+                                    data-gift="{{ s.display_gift_label }}"
+
+                                    data-message="{{ s.message|default:'' }}"
+
+                                    data-amount="{{ s.amount|floatformat:2 }}"
+
+                                    data-date="{{ s.created_at|date:'d M Y, h:i A' }}">
+
+                                    <svg aria-hidden="true"><use href="#icon-eye"/></svg>
+
+                                </button>
+
+                            </td>
+
+                        </tr>
+
+                        {% empty %}
+
+                        <tr><td colspan="5" class="empty">No gifts yet. Share your gifting link to get started.</td></tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+
+
+        <div id="wishlist-tab" class="dash-tab-panel">
+
+            <div class="panel-head">
+
+                <div>
+
+                    <h3>My Wishlist</h3>
+
+                    <p class="muted">{{ wishlist_items.count }} item{{ wishlist_items.count|pluralize }}</p>
+
+                </div>
+
+                <button type="button" class="dash-btn dash-btn-accent dash-btn-sm" id="open-wishlist-modal-2" title="Add wishlist">
+
+                    <svg class="dash-svg" aria-hidden="true"><use href="#icon-plus"/></svg>
+
+                    Add Wishlist
+
+                </button>
+
+            </div>
+
+            <div class="wishlist-list">
+
+                {% for item in wishlist_items %}
+
+                <article class="wishlist-row">
+
+                    <div>
+
+                        <h4>{{ item.title }}</h4>
+
+                        {% if item.description %}<p>{{ item.description }}</p>{% endif %}
+
+                        <div class="progress"><div class="progress-bar" data-progress="{{ item.progress_percent }}"></div></div>
+
+                        <small>KES {{ item.raised_amount|floatformat:2 }} / {{ item.target_amount|floatformat:2 }} · {{ item.progress_percent }}%</small>
+
+                    </div>
+
+                    <form method="post">
+
+                        {% csrf_token %}
+
+                        <input type="hidden" name="action" value="delete_wishlist">
+
+                        <input type="hidden" name="item_id" value="{{ item.id }}">
+
+                        <button type="submit" class="wishlist-del" aria-label="Remove item" title="Remove item">&times;</button>
+
+                    </form>
+
+                </article>
+
+                {% empty %}
+
+                <p class="empty">Your wishlist is empty. Click <strong>Add Wishlist</strong> to create one.</p>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+
+
+        <div id="qrcode-tab" class="dash-tab-panel">
+
+            <h3>Share via QR</h3>
+
+            <div class="qr-grid">
+
+                <article class="qr-card">
+
+                    <span class="qr-label">Gifting link</span>
+
+                    <div class="qr-box" id="qr-gift" data-qr-url="{{ gift_url }}"></div>
+
+                    <button type="button" class="dash-btn dash-btn-accent dash-btn-sm qr-download" data-qr-target="qr-gift" data-qr-filename="giftme-gift-qr.png" data-qr-type="gift" data-display-name="{{ display_name }}" data-is-birthday="{% if is_birthday_today %}1{% else %}0{% endif %}" title="Download gifting QR">
+
+                        <svg class="dash-svg" aria-hidden="true"><use href="#icon-download"/></svg>
+
+                        Download
+
+                    </button>
+
+                </article>
+
+                <article class="qr-card">
+
+                    <span class="qr-label">Wishlist link</span>
+
+                    <div class="qr-box" id="qr-wishlist" data-qr-url="{{ wishlist_url }}"></div>
+
+                    <button type="button" class="dash-btn dash-btn-accent dash-btn-sm qr-download" data-qr-target="qr-wishlist" data-qr-filename="giftme-wishlist-qr.png" data-qr-type="wishlist" data-display-name="{{ display_name }}" title="Download wishlist QR">
+
+                        <svg class="dash-svg" aria-hidden="true"><use href="#icon-download"/></svg>
+
+                        Download
+
+                    </button>
+
+                </article>
+
+            </div>
+
+        </div>
+
+
+
+        <div id="withdrawals-tab" class="dash-tab-panel">
+
+            <h3>Withdrawal History</h3>
+
+            <div class="table-scroll">
+
+                <table>
+
+                    <thead><tr><th>Amount</th><th>Status</th><th>Phone</th><th>Date</th></tr></thead>
+
+                    <tbody>
+
+                        {% for w in withdrawals %}
+
+                        <tr>
+
+                            <td class="amount">KES {{ w.amount|floatformat:2 }}</td>
+
+                            <td><span class="status status-{{ w.status }}">{{ w.get_status_display }}</span></td>
+
+                            <td>{{ w.payout_phone|default:"-" }}</td>
+
+                            <td>{{ w.created_at|date:"d M Y" }}</td>
+
+                        </tr>
+
+                        {% empty %}
+
+                        <tr><td colspan="4" class="empty">No withdrawals yet.</td></tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</div>
+
+
+
+<div class="dash-modal" id="gift-detail-modal" hidden>
+
+    <div class="dash-modal-backdrop" data-close-modal="gift-detail-modal"></div>
+
+    <div class="dash-modal-card dash-gift-detail-card">
+
+        <button type="button" class="dash-modal-close dash-gift-detail-close" data-close-modal="gift-detail-modal" aria-label="Close" title="Close">
+
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+
+        </button>
+
+        <div class="gift-detail-hero">
+
+            <div class="gift-detail-hero-icon" aria-hidden="true">
+
+                <i class="fa-solid fa-gift"></i>
+
+            </div>
+
+            <div class="gift-detail-hero-body">
+
+                <p class="gift-detail-hero-label">Gift received</p>
+
+                <p class="gift-detail-hero-from" id="gift-detail-sender">—</p>
+
+                <p class="gift-detail-hero-amount" id="gift-detail-amount">—</p>
+
+            </div>
+
+        </div>
+
+        <div class="gift-detail-meta-grid">
+
+            <div class="gift-detail-meta-item">
+
+                <span class="gift-detail-meta-label"><i class="fa-solid fa-gift" aria-hidden="true"></i> Gift</span>
+
+                <strong id="gift-detail-gift">—</strong>
+
+            </div>
+
+            <div class="gift-detail-meta-item">
+
+                <span class="gift-detail-meta-label"><i class="fa-regular fa-clock" aria-hidden="true"></i> When</span>
+
+                <strong id="gift-detail-date">—</strong>
+
+            </div>
+
+        </div>
+
+        <div class="gift-detail-message-block" id="gift-detail-message-wrap">
+
+            <span class="gift-detail-message-label"><i class="fa-regular fa-message" aria-hidden="true"></i> Their message</span>
+
+            <blockquote class="gift-detail-message" id="gift-detail-message"></blockquote>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<div class="dash-modal" id="wishlist-modal" hidden>
+
+    <div class="dash-modal-backdrop" data-close-modal="wishlist-modal"></div>
+
+    <div class="dash-modal-card dash-modal-scroll">
+
+        <button type="button" class="dash-modal-close" data-close-modal="wishlist-modal" aria-label="Close" title="Close">&times;</button>
+
+        <h2>Add Wishlist</h2>
+
+        <form method="post" id="wishlist-modal-form" class="dash-modal-form">
+
+            {% csrf_token %}
+
+            <input type="hidden" name="action" value="add_wishlist">
+
+            <div class="wishlist-modal-body scroll-area" id="wishlist-rows">
+
+                <div class="wishlist-item-row" data-wishlist-row>
+
+                    <div class="field">
+
+                        <label>Item name</label>
+
+                        <input name="wish_title" placeholder="Item name" required>
+
+                    </div>
+
+                    <div class="field">
+
+                        <label>Target amount (KES)</label>
+
+                        <input name="wish_target" type="number" min="1" step="1" placeholder="5000" required>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="modal-toolbar">
+
+                <button type="button" class="dash-btn dash-btn-ghost dash-btn-sm" id="add-wishlist-row" title="Add another item">
+
+                    <svg class="dash-svg" aria-hidden="true"><use href="#icon-plus"/></svg>
+
+                    Add another item
+
+                </button>
+
+            </div>
+
+            <div class="modal-actions">
+
+                <button type="button" class="dash-btn dash-btn-ghost" data-close-modal="wishlist-modal" title="Cancel">Cancel</button>
+
+                <button type="submit" class="dash-btn dash-btn-primary modal-submit-btn" title="Save wishlist">Save</button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+
+<div class="dash-modal" id="withdraw-modal" hidden>
+
+    <div class="dash-modal-backdrop" data-close-modal="withdraw-modal"></div>
+
+    <div class="dash-modal-card dash-modal-scroll">
+
+        <button type="button" class="dash-modal-close" data-close-modal="withdraw-modal" aria-label="Close" title="Close">&times;</button>
+
+        <h2 id="withdraw-modal-title">Withdraw</h2>
+        <p class="dash-modal-sub" id="withdraw-modal-sub">Minimum withdrawal KES 500. We’ll email a one-time code to <strong>{{ user.email }}</strong> before sending funds.</p>
+        <p class="dash-modal-error" id="withdraw-modal-error" hidden></p>
+
+        <div id="withdraw-state-form">
+            <form id="withdraw-details-form" class="dash-modal-form">
+                {% csrf_token %}
+                <div class="modal-body-fields">
+                    <div class="field">
+                        <label for="withdraw-amount">Amount (KES)</label>
+                        <input id="withdraw-amount" name="amount" type="number" min="500" max="{{ available_balance|floatformat:0 }}" step="1" placeholder="500" required>
+                    </div>
+                    <div class="field">
+                        <label for="withdraw-phone">M-Pesa number</label>
+                        <input id="withdraw-phone" name="payout_phone" type="tel" inputmode="numeric" pattern="07[0-9]{8}" maxlength="10" placeholder="0712345678" value="{% if profile.payout_phone|slice:':3' == '254' %}0{{ profile.payout_phone|slice:'3:' }}{% elif profile.payout_phone|slice:':3' == '+25' %}0{{ profile.payout_phone|slice:'4:' }}{% else %}{{ profile.payout_phone }}{% endif %}" required>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="dash-btn dash-btn-ghost" data-close-modal="withdraw-modal" title="Cancel">Cancel</button>
+                    <button type="submit" class="dash-btn dash-btn-primary modal-submit-btn" id="withdraw-send-code-btn" title="Send verification code">Send code</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="withdraw-state-verify" hidden>
+            <form id="withdraw-verify-form" class="dash-modal-form">
+                {% csrf_token %}
+                <div class="modal-body-fields">
+                    <div class="field">
+                        <label for="withdraw-code">Email verification code</label>
+                        <input id="withdraw-code" name="code" class="auth-input withdraw-otp-input" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="••••••" autocomplete="one-time-code" required>
+                        <small class="field-hint" id="withdraw-verify-hint">Enter the 6-digit code sent to {{ user.email }}.</small>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="dash-btn dash-btn-ghost" id="withdraw-back-btn" title="Back">Back</button>
+                    <button type="submit" class="dash-btn dash-btn-primary modal-submit-btn" id="withdraw-submit-btn" title="Confirm withdrawal">Confirm withdrawal</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="withdraw-state-loading" class="dash-modal-state" hidden>
+            <p>Processing your withdrawal with M-Pesa…</p>
+        </div>
+
+        <div id="withdraw-state-success" class="dash-modal-state" hidden>
+            <p id="withdraw-success-message">Withdrawal submitted successfully.</p>
+            <div class="modal-actions">
+                <button type="button" class="dash-btn dash-btn-primary" data-close-modal="withdraw-modal" title="Close">Done</button>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="{% static 'js/withdraw-modal.js' %}"></script>
+
+{% endblock %}
+
+{% block site_footer %}{% endblock %}

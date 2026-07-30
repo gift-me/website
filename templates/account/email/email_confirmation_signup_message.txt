@@ -1,0 +1,8 @@
+{% load account %}{% load i18n %}{% autoescape off %}{% user_display user as user_display %}Hi {{ user_display }},
+
+Welcome to GiftMe! Confirm your email to finish signup and start receiving gifts:
+
+{{ activate_url }}
+
+If you didn’t sign up, you can ignore this message.
+{% endautoescape %}

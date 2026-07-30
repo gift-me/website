@@ -1,0 +1,4 @@
+{% load static %}
+<span class="brand-logo brand-logo--{{ size|default:'md' }}" aria-hidden="true">
+    <img src="{% static 'images/logo.svg' %}" alt="" width="{{ width|default:20 }}" height="{{ height|default:20 }}" decoding="async">
+</span>

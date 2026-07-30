@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Account Settings | GiftMe{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/settings.css' %}">{% endblock %}
+{% block content %}
+<div class="settings-wrap">
+    <nav class="settings-tabs">
+        <a href="{% url 'profile-setup' %}?tab=profile" class="settings-tab{% if active_tab == 'profile' %} active{% endif %}">Account settings</a>
+        <a href="{% url 'profile-setup' %}?tab=password" class="settings-tab{% if active_tab == 'password' %} active{% endif %}">Update password</a>
+    </nav>
+
+    {% if active_tab == 'password' %}
+    <section class="settings-section">
+        <h1 class="settings-title">Password</h1>
+
+        <form method="post" class="settings-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="password">
+
+            <div class="settings-row">
+                <label for="id_oldpassword">Current password</label>
+                <div class="settings-field">
+                    <div class="password-wrap">
+                        <input type="password" name="oldpassword" id="id_oldpassword" class="settings-input" placeholder="Enter current password" required>
+                        <button type="button" class="password-toggle" data-target="id_oldpassword" aria-label="Show password">
+                            <i class="fa-regular fa-eye"></i>
+                        </button>
+                    </div>
+                    {% for error in password_form.oldpassword.errors %}<span class="settings-error">{{ error }}</span>{% endfor %}
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <label for="id_password1">New password</label>
+                <div class="settings-field">
+                    <div class="password-wrap">
+                        <input type="password" name="password1" id="id_password1" class="settings-input" placeholder="Enter new password" required>
+                        <button type="button" class="password-toggle" data-target="id_password1" aria-label="Show password">
+                            <i class="fa-regular fa-eye"></i>
+                        </button>
+                    </div>
+                    {% for error in password_form.password1.errors %}<span class="settings-error">{{ error }}</span>{% endfor %}
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <label for="id_password2">Confirm new password</label>
+                <div class="settings-field">
+                    <div class="password-wrap">
+                        <input type="password" name="password2" id="id_password2" class="settings-input" placeholder="Confirm new password" required>
+                        <button type="button" class="password-toggle" data-target="id_password2" aria-label="Show password">
+                            <i class="fa-regular fa-eye"></i>
+                        </button>
+                    </div>
+                    {% for error in password_form.password2.errors %}<span class="settings-error">{{ error }}</span>{% endfor %}
+                </div>
+            </div>
+
+            {% for error in password_form.non_field_errors %}
+            <p class="settings-error">{{ error }}</p>
+            {% endfor %}
+
+            <div class="settings-actions">
+                <button type="submit" class="settings-save" title="Update password">Update password</button>
+            </div>
+        </form>
+    </section>
+
+    {% else %}
+    <section class="settings-section">
+        <h1 class="settings-title">Profile information</h1>
+
+        {% if error %}<p class="settings-error">{{ error }}</p>{% endif %}
+
+        <form method="post" enctype="multipart/form-data" class="settings-form" id="profile-setup-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="profile">
+
+            <div class="settings-row settings-row-photo">
+                <label class="settings-photo-label">Click photo to update</label>
+                <div class="settings-field settings-photo-field">
+                    <input type="file" name="profile_picture" id="settings_profile_picture" accept="image/*" hidden>
+                    <div class="settings-photo-wrap">
+                        <button type="button" class="settings-avatar" id="settings-avatar-picker" title="Click photo to update">
+                            {% if profile.profile_picture %}
+                            <img id="settings-avatar-preview" src="{{ profile.profile_picture.url }}" alt="Profile photo">
+                            {% else %}
+                            <img id="settings-avatar-preview" alt="" hidden>
+                            <span class="settings-avatar-placeholder" id="settings-avatar-icon"><i class="fa-solid fa-user"></i></span>
+                            {% endif %}
+                        </button>
+                        {% if profile.profile_picture %}
+                        <button type="button" class="settings-delete-photo" id="settings-photo-clear" title="Delete photo" aria-label="Delete photo">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <label for="username">Username</label>
+                <div class="settings-field">
+                    <input type="text" name="username" id="username" class="settings-input" placeholder="@yourname" value="{{ profile.username|default:'' }}">
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <label for="display_name">Full name</label>
+                <div class="settings-field">
+                    <input type="text" name="display_name" id="display_name" class="settings-input" placeholder="Your name" value="{{ profile.display_name|default:'' }}">
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <label for="birthday_date">Birthday</label>
+                <div class="settings-field">
+                    <input type="date" name="birthday_date" id="birthday_date" class="settings-input" value="{{ profile.birthday_date|date:'Y-m-d' }}">
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <label>Email</label>
+                <div class="settings-field">
+                    <input type="email" class="settings-input" value="{{ profile.user.email }}" disabled>
+                </div>
+            </div>
+
+            <div class="settings-actions">
+                <button type="submit" class="settings-save" title="Save changes">Save changes</button>
+            </div>
+        </form>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'js/auth.js' %}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const fileInput = document.getElementById("settings_profile_picture");
+    const picker = document.getElementById("settings-avatar-picker");
+    const preview = document.getElementById("settings-avatar-preview");
+    const icon = document.getElementById("settings-avatar-icon");
+    const clearBtn = document.getElementById("settings-photo-clear");
+
+    if (picker && fileInput) {
+        picker.addEventListener("click", () => fileInput.click());
+    }
+
+    if (fileInput) {
+        fileInput.addEventListener("change", () => {
+            const file = fileInput.files && fileInput.files[0];
+            if (!file || !preview) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                preview.src = e.target.result;
+                preview.hidden = false;
+                if (icon) icon.hidden = true;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (fileInput) fileInput.value = "";
+            if (preview) {
+                preview.hidden = true;
+                preview.removeAttribute("src");
+            }
+            if (icon) icon.hidden = false;
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,115 @@
+/* Wishlist page — extends gift-page layout */
+
+.wishlist-page .gift-recent-section {
+    display: none;
+}
+
+.wishlist-items-section h2 {
+    margin: 0 0 0.85rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--gift-text);
+}
+
+.wishlist-items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.wishlist-items > li {
+    border: 0;
+}
+
+.wishlist-item-btn {
+    width: 100%;
+    border: 1px solid var(--gift-line);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(4px);
+    padding: 0.9rem 2.25rem 0.9rem 0.95rem;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    position: relative;
+    transition: transform 0.15s, box-shadow 0.2s, border-color 0.2s;
+    box-shadow: 0 4px 14px rgba(34, 34, 34, 0.04);
+}
+
+.wishlist-item-btn:hover {
+    transform: translateY(-1px);
+    border-color: rgba(230, 57, 70, 0.22);
+    box-shadow: 0 8px 22px rgba(230, 57, 70, 0.1);
+}
+
+.wishlist-item-main {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    margin-bottom: 0.55rem;
+}
+
+.wishlist-item-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--gift-text);
+    line-height: 1.25;
+}
+
+.wishlist-item-meta {
+    font-size: 0.78rem;
+    color: var(--gift-muted);
+}
+
+.wishlist-item-progress {
+    height: 5px;
+    background: #ece8df;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.wishlist-item-progress-bar {
+    height: 100%;
+    background: var(--gift-primary);
+    border-radius: 999px;
+    min-width: 2px;
+    width: 0;
+    transition: width 0.3s ease;
+}
+
+.wishlist-item-chevron {
+    position: absolute;
+    right: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gift-primary);
+    font-size: 0.82rem;
+}
+
+.wishlist-empty {
+    padding: 2rem 0;
+    text-align: center;
+    color: var(--gift-muted);
+    font-size: 0.92rem;
+}
+
+@media (max-width: 720px) {
+    .wishlist-items-section h2 {
+        font-size: 1.1rem;
+    }
+
+    .wishlist-item-btn {
+        padding: 0.8rem 2rem 0.8rem 0.85rem;
+    }
+
+    .wishlist-item-title {
+        font-size: 0.88rem;
+    }
+
+    .wishlist-item-meta {
+        font-size: 0.72rem;
+    }
+}

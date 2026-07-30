@@ -1,0 +1,109 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block ops_title %}Ops{% endblock %} | GiftMe</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/ops-admin.css' %}">
+    {% block ops_extra_css %}{% endblock %}
+</head>
+<body class="ops-body">
+    {% if user.is_authenticated and user.is_staff %}
+    <div class="ops-sidebar-backdrop" id="ops-sidebar-backdrop" hidden></div>
+    <aside class="ops-sidebar" id="ops-sidebar">
+        <div class="ops-sidebar-head">
+            <a href="{% url 'ops-overview' %}" class="ops-brand">
+                <span class="ops-brand-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M20 7h-3V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v2a9 9 0 0 0 9 9 9 9 0 0 0 9-9V8a1 1 0 0 0-1-1zM9 5h6v2H9V5z" fill="currentColor"/></svg>
+                </span>
+                <span class="ops-brand-text">GiftMe Ops</span>
+            </a>
+            <button type="button" class="ops-sidebar-toggle" id="ops-sidebar-toggle" aria-label="Collapse sidebar" title="Collapse sidebar">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+        </div>
+        <nav class="ops-nav">
+            <a href="{% url 'ops-overview' %}" class="{% if ops_page == 'overview' %}is-active{% endif %}" title="Overview">
+                <span class="ops-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z" stroke="currentColor" stroke-width="1.8"/></svg></span>
+                <span class="ops-nav-label">Overview</span>
+            </a>
+            <a href="{% url 'ops-deposits' %}" class="{% if ops_page == 'deposits' %}is-active{% endif %}" title="Deposits">
+                <span class="ops-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l4-4m-4 4l-4-4M4 19h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+                <span class="ops-nav-label">Deposits</span>
+            </a>
+            <a href="{% url 'ops-gifts' %}" class="{% if ops_page == 'gifts' %}is-active{% endif %}" title="Catalog gifts">
+                <span class="ops-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M20 7h-3V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v2a9 9 0 0 0 9 9 9 9 0 0 0 9-9V8a1 1 0 0 0-1-1z" stroke="currentColor" stroke-width="1.8"/></svg></span>
+                <span class="ops-nav-label">Catalog gifts</span>
+            </a>
+            <a href="{% url 'ops-withdrawals' %}" class="{% if ops_page == 'withdrawals' %}is-active{% endif %}" title="Withdrawals">
+                <span class="ops-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21V9m0 0l4 4m-4-4l-4 4M4 5h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+                <span class="ops-nav-label">Withdrawals</span>
+            </a>
+            <a href="{% url 'ops-house-withdrawals' %}" class="{% if ops_page == 'house' %}is-active{% endif %}" title="House withdrawals">
+                <span class="ops-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M3 21h18M5 21V9l7-4 7 4v12M9 21v-6h6v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+                <span class="ops-nav-label">House withdrawals</span>
+            </a>
+            <a href="{% url 'ops-settings' %}" class="{% if ops_page == 'settings' %}is-active{% endif %}" title="Site settings">
+                <span class="ops-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+                <span class="ops-nav-label">Site settings</span>
+            </a>
+            <a href="{% url 'home' %}" class="ops-nav-external" title="View site">
+                <span class="ops-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M10 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4M14 4h6m0 0v6m0-6L10 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+                <span class="ops-nav-label">View site</span>
+            </a>
+        </nav>
+        <form method="post" action="{% url 'ops-logout' %}" class="ops-logout-form">
+            {% csrf_token %}
+            <button type="submit" title="Sign out">
+                <span class="ops-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+                <span class="ops-nav-label">Sign out</span>
+            </button>
+        </form>
+    </aside>
+    {% endif %}
+    <div class="ops-main">
+        {% if user.is_authenticated and user.is_staff %}
+        <header class="ops-topbar">
+            <div class="ops-topbar-left">
+                <button type="button" class="ops-mobile-menu-btn" id="ops-mobile-menu-btn" aria-label="Open menu">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+                <h1>{% block ops_heading %}Dashboard{% endblock %}</h1>
+            </div>
+            <div class="ops-topbar-right">
+                <span class="ops-welcome">Welcome, {{ user.get_username }}</span>
+                <button type="button" class="ops-house-withdraw-btn" id="ops-open-house-withdraw" title="House profit withdrawal">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0l4-4m-4 4l-4-4M4 19h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+            </div>
+        </header>
+        {% endif %}
+        <div class="ops-content">
+            {% for message in messages %}
+            <p class="ops-flash ops-flash-{{ message.tags }}">{{ message }}</p>
+            {% endfor %}
+            {% block ops_content %}{% endblock %}
+        </div>
+    </div>
+
+    <div class="ops-modal" id="ops-house-modal" hidden>
+        <div class="ops-modal-backdrop" data-close-house-modal></div>
+        <div class="ops-modal-card">
+            <button type="button" class="ops-modal-close" data-close-house-modal>&times;</button>
+            <h2>House profit withdrawal</h2>
+            <p class="ops-modal-sub">Available: KES <span id="ops-house-available">{{ stats.available_house_profit|default:"0"|floatformat:0 }}</span></p>
+            <p class="ops-modal-error" id="ops-house-error" hidden></p>
+            <label>Amount (KES)<input type="number" id="ops-house-amount" min="1" step="1"></label>
+            <label>M-Pesa phone<input type="tel" id="ops-house-phone" placeholder="0712345678"></label>
+            <button type="button" class="ops-btn-primary" id="ops-house-submit">Withdraw</button>
+        </div>
+    </div>
+
+    <script src="{% static 'js/ops-admin.js' %}"></script>
+    {% block ops_scripts %}{% endblock %}
+</body>
+</html>

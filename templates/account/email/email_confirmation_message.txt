@@ -1,0 +1,8 @@
+{% load account %}{% load i18n %}{% autoescape off %}{% user_display user as user_display %}Hi {{ user_display }},
+
+Thanks for joining GiftMe. Please confirm your email address to activate your account:
+
+{{ activate_url }}
+
+If you didn’t create a GiftMe account, you can ignore this email.
+{% endautoescape %}

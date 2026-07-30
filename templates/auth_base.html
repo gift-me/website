@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}GiftMe{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
+    <link href="https://api.fontshare.com/v2/css?f[]=clash-display@500,600,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/living-ink.css' %}">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="auth-page">
+    {% include "includes/site_icons.html" %}
+
+    <div id="toast-container" aria-live="polite"></div>
+    {% for message in messages %}
+    <span data-toast-message="{{ message }}" data-toast-type="{{ message.tags }}" hidden></span>
+    {% endfor %}
+
+    <main class="auth-shell">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="{% static 'js/toast.js' %}"></script>
+    <script src="{% static 'js/living-ink.js' %}"></script>
+    <script src="{% static 'js/auth.js' %}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
