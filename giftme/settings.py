@@ -208,9 +208,10 @@ STATICFILES_FINDERS = [
 ]
 
 # Runtime compression is enabled by default outside development. Offline
-# compression remains opt-in and requires running `python manage.py compress`.
+# compression is opt-in because it requires a manifest generated from the
+# exact templates being deployed.
 COMPRESS_ENABLED = _env_bool('COMPRESS_ENABLED', not DEBUG)
-COMPRESS_OFFLINE = _env_bool('COMPRESS_OFFLINE', IS_PRODUCTION)
+COMPRESS_OFFLINE = _env_bool('COMPRESS_OFFLINE', False)
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -271,6 +272,8 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = _env_bool("EMAIL_USE_TLS", True)
 EMAIL_USE_SSL = _env_bool("EMAIL_USE_SSL", False)
+# Keep a blocked SMTP connection from hanging signup until the web worker dies.
+EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", "20"))
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "GiftMe <info@giftme.co.ke>")
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 # Prefer SMTP whenever a host is configured. Console backend only dumps to the terminal.
