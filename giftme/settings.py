@@ -78,7 +78,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
-    'compressor',
     'allauth',
     'allauth.account',
     'birthdays.apps.BirthdaysConfig',
@@ -123,12 +122,6 @@ TEMPLATES = [
                 'ops.context_processors.ops_stats',
                 'birthdays.context_processors.site_settings',
             ],
-            # Optional allauth templates are discovered by django-compressor
-            # even when their apps are not enabled in this project.
-            'libraries': {
-                'humanize': 'django.contrib.humanize.templatetags.humanize',
-                'socialaccount': 'birthdays.templatetags.socialaccount_stub',
-            },
         },
     },
 ]
@@ -204,14 +197,7 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-    'compressor.finders.CompressorFinder',
 ]
-
-# Runtime compression is enabled by default outside development. Offline
-# compression is opt-in because it requires a manifest generated from the
-# exact templates being deployed.
-COMPRESS_ENABLED = _env_bool('COMPRESS_ENABLED', not DEBUG)
-COMPRESS_OFFLINE = _env_bool('COMPRESS_OFFLINE', False)
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'

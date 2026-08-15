@@ -1,4 +1,4 @@
-{% load static compress %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,10 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    {% compress css %}
     <link rel="stylesheet" href="{% static 'css/ops-admin.css' %}">
     {% block ops_extra_css %}{% endblock %}
-    {% endcompress %}
 </head>
 <body class="ops-body">
     {% if user.is_authenticated and user.is_staff %}
@@ -103,9 +101,7 @@
     </div>
 
     {% block ops_external_scripts %}{% endblock %}
-    {% compress js %}
     <script src="{% static 'js/ops-admin.js' %}"></script>
     {% block ops_scripts %}{% endblock %}
-    {% endcompress %}
 </body>
 </html>

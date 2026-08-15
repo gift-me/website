@@ -1,4 +1,4 @@
-{% load static compress %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -44,12 +44,10 @@
             },
         };
     </script>
-    {% compress css %}
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
     <link rel="stylesheet" href="{% static 'css/living-ink.css' %}">
     <link rel="stylesheet" href="{% static 'css/header.css' %}">
     {% block extra_css %}{% endblock %}
-    {% endcompress %}
     {% block extra_head %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -72,7 +70,6 @@
     {% include "includes/footer.html" %}
     {% endblock %}
 
-    {% compress js %}
     <script src="{% static 'js/toast.js' %}"></script>
     <script src="{% static 'js/living-ink.js' %}"></script>
     <script src="{% static 'js/app.js' %}"></script>
@@ -80,6 +77,5 @@
     <script src="{% static 'js/landing.js' %}"></script>
     {% endif %}{% endwith %}
     {% block scripts %}{% endblock %}
-    {% endcompress %}
 </body>
 </html>
