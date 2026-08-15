@@ -207,8 +207,8 @@ STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
 
-MEDIA_URL = 'media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = _env_value("MEDIA_URL", "/media/")
+MEDIA_ROOT = Path(_env_value("MEDIA_ROOT", str(BASE_DIR / "media")))
 
 if IS_PRODUCTION:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -236,8 +236,8 @@ LOGIN_REDIRECT_URL = "dashboard"
 LOGOUT_REDIRECT_URL = "home"
 
 # M-Pesa Daraja (Lipa na M-Pesa)
-MPESA_ENV = os.environ.get("MPESA_ENV", "sandbox")
-MPESA_BASE_URL = os.environ.get(
+MPESA_ENV = _env_value("MPESA_ENV", "sandbox")
+MPESA_BASE_URL = _env_value(
     "MPESA_BASE_URL",
     "https://sandbox.safaricom.co.ke" if MPESA_ENV == "sandbox" else "https://api.safaricom.co.ke",
 )

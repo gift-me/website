@@ -176,7 +176,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 showState("form");
                 showError("Payment is taking longer than expected. If you paid, refresh the page.");
             }
-        }, 120000);
+        }, 300000);
     }
 
     async function submitPayment(event) {

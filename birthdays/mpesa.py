@@ -173,11 +173,14 @@ class MpesaClient:
 
         logger.debug("[MPESA_OAUTH_REQUEST] env=%s base_url=%s", settings.MPESA_ENV, self.base_url)
         url = f"{self.base_url}/oauth/v1/generate?grant_type=client_credentials"
-        response = requests.get(
-            url,
-            auth=(self.consumer_key, self.consumer_secret),
-            timeout=30,
-        )
+        try:
+            response = requests.get(
+                url,
+                auth=(self.consumer_key, self.consumer_secret),
+                timeout=30,
+            )
+        except requests.RequestException as exc:
+            raise MpesaError("Could not connect to M-Pesa. Please try again.") from exc
         try:
             data = response.json()
         except json.JSONDecodeError as exc:
@@ -236,12 +239,15 @@ class MpesaClient:
             "TransactionDesc": f"{transaction_desc}"[:30],
         }
 
-        response = requests.post(
-            url,
-            json=payload,
-            headers=self._headers(access_token),
-            timeout=30,
-        )
+        try:
+            response = requests.post(
+                url,
+                json=payload,
+                headers=self._headers(access_token),
+                timeout=30,
+            )
+        except requests.RequestException as exc:
+            raise MpesaError("Could not connect to M-Pesa. Please try again.") from exc
 
         try:
             data = response.json()
@@ -275,13 +281,10 @@ class MpesaClient:
 
         amount = _parse_whole_kes_amount(amount)
         phone = normalize_phone(phone)
-        debug_print(
-            "[MPESA_B2C_REQUEST]",
-            "shortcode=",
+        logger.debug(
+            "[MPESA_B2C_REQUEST] shortcode=%s phone=%s amount=%s",
             self.b2c_shortcode,
-            "phone=",
             phone,
-            "amount=",
             amount,
         )
 
@@ -300,12 +303,15 @@ class MpesaClient:
             "Occasion": f"{occasion}"[:100],
         }
 
-        response = requests.post(
-            url,
-            json=payload,
-            headers=self._headers(access_token),
-            timeout=30,
-        )
+        try:
+            response = requests.post(
+                url,
+                json=payload,
+                headers=self._headers(access_token),
+                timeout=30,
+            )
+        except requests.RequestException as exc:
+            raise MpesaError("Could not connect to M-Pesa. Please try again.") from exc
 
         try:
             data = response.json()
@@ -313,14 +319,14 @@ class MpesaClient:
             raise MpesaError("Invalid B2C response from Daraja.", response.text) from exc
 
         if response.status_code != 200:
-            debug_print("[MPESA_B2C_HTTP_ERROR]", "status=", response.status_code, "data=", data)
+            logger.debug("[MPESA_B2C_HTTP_ERROR] status=%s data=%s", response.status_code, data)
             raise MpesaError(
                 data.get("errorMessage") or data.get("error") or "B2C payment request failed.",
                 data,
             )
 
         if f"{data.get('ResponseCode', '')}" != "0":
-            debug_print("[MPESA_B2C_REJECTED]", data)
+            logger.debug("[MPESA_B2C_REJECTED] %s", data)
             raise MpesaError(
                 data.get("ResponseDescription") or "B2C payment rejected.",
                 data,
@@ -342,12 +348,15 @@ class MpesaClient:
             "Timestamp": timestamp,
             "CheckoutRequestID": checkout_request_id,
         }
-        response = requests.post(
-            url,
-            json=payload,
-            headers=self._headers(access_token),
-            timeout=30,
-        )
+        try:
+            response = requests.post(
+                url,
+                json=payload,
+                headers=self._headers(access_token),
+                timeout=30,
+            )
+        except requests.RequestException as exc:
+            raise MpesaError("Could not connect to M-Pesa. Please try again.") from exc
         try:
             data = response.json()
         except json.JSONDecodeError as exc:
