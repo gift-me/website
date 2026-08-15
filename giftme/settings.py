@@ -123,6 +123,12 @@ TEMPLATES = [
                 'ops.context_processors.ops_stats',
                 'birthdays.context_processors.site_settings',
             ],
+            # Optional allauth templates are discovered by django-compressor
+            # even when their apps are not enabled in this project.
+            'libraries': {
+                'humanize': 'django.contrib.humanize.templatetags.humanize',
+                'socialaccount': 'birthdays.templatetags.socialaccount_stub',
+            },
         },
     },
 ]
