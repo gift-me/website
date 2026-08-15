@@ -251,7 +251,13 @@ MPESA_B2C_TIMEOUT_URL = os.environ.get("MPESA_B2C_TIMEOUT_URL", "")
 WITHDRAWAL_MIN_AMOUNT = Decimal(os.environ.get("WITHDRAWAL_MIN_AMOUNT", "500"))
 WITHDRAWAL_OTP_EXPIRY_MINUTES = int(os.environ.get("WITHDRAWAL_OTP_EXPIRY_MINUTES", "10"))
 
-# Email (verification, password reset, withdrawal OTP)
+# Email (verification, password reset, withdrawal OTP). Brevo's API uses
+# HTTPS/443, which is available even when the deployment blocks SMTP ports.
+BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "").strip()
+BREVO_API_URL = os.environ.get(
+    "BREVO_API_URL",
+    "https://api.brevo.com/v3/smtp/email",
+).strip()
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
@@ -264,7 +270,9 @@ DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "GiftMe <info@giftme.c
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 # Prefer SMTP whenever a host is configured. Console backend only dumps to the terminal.
 _email_backend = os.environ.get("EMAIL_BACKEND", "").strip()
-if EMAIL_HOST and (
+if BREVO_API_KEY:
+    EMAIL_BACKEND = "birthdays.email_backend.BrevoEmailBackend"
+elif EMAIL_HOST and (
     not _email_backend
     or _email_backend.endswith("console.EmailBackend")
 ):
