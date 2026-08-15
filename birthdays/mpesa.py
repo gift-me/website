@@ -140,6 +140,7 @@ class MpesaClient:
         self.consumer_key = settings.MPESA_CONSUMER_KEY
         self.consumer_secret = settings.MPESA_CONSUMER_SECRET
         self.shortcode = settings.MPESA_SHORTCODE
+        self.till = settings.MPESA_TILL
         self.passkey = settings.MPESA_PASSKEY
         self.callback_url = normalize_callback_url(settings.MPESA_CALLBACK_URL)
         self.transaction_type = settings.MPESA_TRANSACTION_TYPE
@@ -220,6 +221,7 @@ class MpesaClient:
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         url = f"{self.base_url}/mpesa/stkpush/v1/processrequest"
 
+        party_b = self.till if self.till else self.shortcode
         payload = {
             "BusinessShortCode": self.shortcode,
             "Password": self._password_payload(timestamp),
@@ -227,11 +229,11 @@ class MpesaClient:
             "TransactionType": self.transaction_type,
             "Amount": amount,
             "PartyA": phone,
-            "PartyB": self.shortcode,
+            "PartyB": party_b,
             "PhoneNumber": phone,
             "CallBackURL": self.callback_url,
             "AccountReference": f"{account_reference}"[:12],
-            "TransactionDesc": f"{transaction_desc}"[:13],
+            "TransactionDesc": f"{transaction_desc}"[:30],
         }
 
         response = requests.post(
