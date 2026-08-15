@@ -26,12 +26,20 @@ except ImportError:
     pass
 
 
+def _env_value(name, default=""):
+    """Read an environment value and remove optional dotenv-style quotes."""
+    value = str(os.environ.get(name, default)).strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in ('"', "'"):
+        value = value[1:-1].strip()
+    return value
+
+
 def _env_bool(name, default=False):
-    return os.environ.get(name, str(default)).lower() in ("1", "true", "yes")
+    return _env_value(name, str(default)).lower() in ("1", "true", "yes")
 
 
 def _env_list(name, default=""):
-    raw = os.environ.get(name, default)
+    raw = _env_value(name, default)
     return [item.strip() for item in raw.split(",") if item.strip()]
 
 
@@ -253,23 +261,26 @@ WITHDRAWAL_OTP_EXPIRY_MINUTES = int(os.environ.get("WITHDRAWAL_OTP_EXPIRY_MINUTE
 
 # Email (verification, password reset, withdrawal OTP). Brevo's API uses
 # HTTPS/443, which is available even when the deployment blocks SMTP ports.
-BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "").strip()
-BREVO_API_URL = os.environ.get(
+BREVO_API_KEY = _env_value("BREVO_API_KEY")
+BREVO_API_URL = _env_value(
     "BREVO_API_URL",
     "https://api.brevo.com/v3/smtp/email",
-).strip()
-EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
-EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
-EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+)
+EMAIL_HOST = _env_value("EMAIL_HOST")
+EMAIL_PORT = int(_env_value("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = _env_value("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = _env_value("EMAIL_HOST_PASSWORD")
 EMAIL_USE_TLS = _env_bool("EMAIL_USE_TLS", True)
 EMAIL_USE_SSL = _env_bool("EMAIL_USE_SSL", False)
 # Keep a blocked SMTP connection from hanging signup until the web worker dies.
-EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", "20"))
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "GiftMe <info@giftme.co.ke>")
+EMAIL_TIMEOUT = int(_env_value("EMAIL_TIMEOUT", "20"))
+DEFAULT_FROM_EMAIL = _env_value(
+    "DEFAULT_FROM_EMAIL",
+    "GiftMe <info@giftme.co.ke>",
+)
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
-# Prefer SMTP whenever a host is configured. Console backend only dumps to the terminal.
-_email_backend = os.environ.get("EMAIL_BACKEND", "").strip()
+# Prefer the Brevo API when configured. Otherwise use SMTP or the local console.
+_email_backend = _env_value("EMAIL_BACKEND")
 if BREVO_API_KEY:
     EMAIL_BACKEND = "birthdays.email_backend.BrevoEmailBackend"
 elif EMAIL_HOST and (

@@ -100,6 +100,11 @@ class BrevoEmailBackend(BaseEmailBackend):
         try:
             response.raise_for_status()
         except requests.RequestException:
+            if response.status_code == 401:
+                raise requests.HTTPError(
+                    "Brevo rejected BREVO_API_KEY (401 Key not found). "
+                    "Create a new Brevo API key and set it in Railway without quotes."
+                ) from None
             logger.error(
                 "Brevo API rejected email: status=%s body=%s",
                 response.status_code,
