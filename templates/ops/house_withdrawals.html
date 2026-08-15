@@ -2,14 +2,14 @@
 {% block ops_heading %}House withdrawals{% endblock %}
 {% block ops_content %}
 <form class="ops-filters" method="get">
-    <input type="search" name="q" value="{{ q }}" placeholder="Phone, note…">
     <select name="status">
         <option value="">All statuses</option>
         <option value="pending" {% if status == 'pending' %}selected{% endif %}>Pending</option>
-        <option value="approved" {% if status == 'approved' %}selected{% endif %}>Approved</option>
+        <option value="approved" {% if status == 'approved' %}selected{% endif %}>Completed</option>
         <option value="rejected" {% if status == 'rejected' %}selected{% endif %}>Rejected</option>
     </select>
     <button type="submit" class="ops-btn-secondary">Filter</button>
+    <button type="button" class="ops-btn-primary" id="ops-open-house-withdraw">Withdraw house profit</button>
 </form>
 <div class="ops-table-wrap">
     <table class="ops-table">
@@ -31,7 +31,7 @@
                 <td>KES {{ r.mpesa_withdrawal_fee|floatformat:0 }}</td>
                 <td>{{ r.payout_phone }}</td>
                 <td>{{ r.created_by.username|default:"—" }}</td>
-                <td><span class="ops-badge ops-badge-{{ r.status }}">{{ r.status }}</span></td>
+                <td><span class="ops-badge ops-badge-{{ r.status }}">{% if r.status == 'approved' %}completed{% else %}{{ r.status }}{% endif %}</span></td>
             </tr>
             {% empty %}
             <tr><td colspan="6">No house withdrawals yet.</td></tr>

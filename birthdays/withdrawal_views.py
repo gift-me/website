@@ -13,7 +13,7 @@ from .withdrawal_service import (
     initiate_withdrawal_authorization,
     mark_withdrawal_completed,
     mark_withdrawal_failed,
-    verify_and_disburse,
+    verify_and_create_withdrawal,
     withdrawal_status_payload,
 )
 
@@ -67,7 +67,7 @@ def withdraw_verify(request):
 
     profile = _profile_for_request(request)
     try:
-        withdrawal = verify_and_disburse(
+        withdrawal = verify_and_create_withdrawal(
             profile=profile,
             authorization_id=payload.get("authorization_id"),
             code_raw=payload.get("code"),
@@ -78,7 +78,7 @@ def withdraw_verify(request):
     return JsonResponse(
         {
             "success": True,
-            "message": "Withdrawal submitted. M-Pesa is processing your payout.",
+            "message": "Your withdrawal is being processed. It normally takes up to 24 hours. We will email you when it has been processed.",
             **withdrawal_status_payload(withdrawal),
         }
     )

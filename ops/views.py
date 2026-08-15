@@ -10,8 +10,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 
-from birthdays.fees import calculate_mpesa_withdrawal_fee
 from birthdays.models import CatalogGift, HouseWithdrawal, MpesaPayment, SiteSettings, WithdrawalRequest
+from birthdays.exceptions import MpesaError
+from birthdays.withdrawal_service import approve_manual_withdrawal, reject_manual_withdrawal
 from birthdays.safe_cache import cache_get, cache_incr, cache_set
 
 from .decorators import staff_required
@@ -113,16 +114,34 @@ def ops_withdrawals(request):
     )
 
 
+@require_POST
+@staff_required
+def ops_withdrawal_action(request, withdrawal_id, action):
+    try:
+        if action == "accept":
+            approve_manual_withdrawal(withdrawal_id)
+            messages.success(request, "Withdrawal accepted and the user was emailed.")
+        elif action == "reject":
+            reject_manual_withdrawal(withdrawal_id, request.POST.get("reason", ""))
+            messages.success(request, "Withdrawal rejected and the amount was returned to the user’s balance.")
+        else:
+            return JsonResponse({"success": False, "error": "Unknown withdrawal action."}, status=400)
+    except WithdrawalRequest.DoesNotExist:
+        messages.error(request, "Withdrawal request not found.")
+    except MpesaError as exc:
+        messages.error(request, str(exc))
+    return redirect(request.META.get("HTTP_REFERER") or reverse("ops-withdrawals"))
+
+
 @require_GET
 @staff_required
 def ops_house_withdrawals(request):
-    q = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
-    rows = filter_house_withdrawals(q, status)[:200]
+    rows = filter_house_withdrawals("", status)[:200]
     return render(
         request,
         "ops/house_withdrawals.html",
-        {**_ops_ctx(request, "house"), "rows": rows, "q": q, "status": status},
+        {**_ops_ctx(request, "house"), "rows": rows, "status": status},
     )
 
 
@@ -181,15 +200,14 @@ def ops_house_withdraw(request):
     if not MPESA_PATTERN.match(phone):
         return JsonResponse({"success": False, "error": "Enter a valid M-Pesa number."}, status=400)
 
-    fee = calculate_mpesa_withdrawal_fee(amount)
     HouseWithdrawal.objects.create(
         amount=amount,
         payout_phone=phone,
-        mpesa_withdrawal_fee=fee,
+        mpesa_withdrawal_fee=Decimal("0"),
         created_by=request.user,
-        status=HouseWithdrawal.Status.PENDING,
+        status=HouseWithdrawal.Status.APPROVED,
     )
-    return JsonResponse({"success": True, "message": "House withdrawal request recorded.", "fee": str(fee)})
+    return JsonResponse({"success": True, "message": "House profit withdrawal recorded as completed."})
 
 
 @require_GET

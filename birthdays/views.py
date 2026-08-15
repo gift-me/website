@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import messages
 from decimal import Decimal, InvalidOperation
 from django.contrib.auth.decorators import login_required
@@ -121,6 +122,7 @@ def dashboard(request):
             "wishlist_items": wishlist_items,
             "total_revenue": profile.total_raised,
             "available_balance": profile.available_balance,
+            "withdrawal_min_amount": settings.WITHDRAWAL_MIN_AMOUNT,
             "total_withdrawn": profile.total_withdrawn,
             "gifts_count": profile.gifts_count,
             "supporters_count": supporters_count,

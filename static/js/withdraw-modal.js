@@ -17,6 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let authorizationId = null;
     let pollTimer = null;
+    let withdrawalCompleted = false;
 
     function getCsrfToken() {
         const input = detailsForm?.querySelector("[name=csrfmiddlewaretoken]");
@@ -59,6 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function resetModal() {
         stopPolling();
         authorizationId = null;
+        withdrawalCompleted = false;
         showError("");
         showState("form");
         verifyForm?.reset();
@@ -73,9 +75,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function closeModal() {
+        const reloadAfterClose = withdrawalCompleted;
         modal.hidden = true;
         document.body.style.overflow = "";
         resetModal();
+        if (reloadAfterClose) window.location.reload();
     }
 
     document.getElementById("open-withdraw-modal")?.addEventListener("click", openModal);
@@ -193,16 +197,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (successMessage) {
                 successMessage.textContent =
-                    data.message || "Withdrawal submitted. M-Pesa is processing your payout.";
+                    data.message || "Your withdrawal is being processed. It normally takes up to 24 hours.";
             }
-
-            if (data.status === "approved") {
-                showState("success");
-                window.setTimeout(() => window.location.reload(), 1800);
-            } else {
-                showState("loading");
-                pollWithdrawalStatus(data.withdrawal_id);
-            }
+            withdrawalCompleted = true;
+            showState("success");
         } catch (error) {
             showState("verify");
             showError(error.message || "Withdrawal could not be processed.");

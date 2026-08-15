@@ -12,6 +12,7 @@ urlpatterns = [
     path("gifts/save/", views.ops_gifts_save, name="ops-gifts-save"),
     path("gifts/delete/", views.ops_gifts_delete, name="ops-gifts-delete"),
     path("withdrawals/", views.ops_withdrawals, name="ops-withdrawals"),
+    path("withdrawals/<int:withdrawal_id>/<str:action>/", views.ops_withdrawal_action, name="ops-withdrawal-action"),
     path("house-withdrawals/", views.ops_house_withdrawals, name="ops-house-withdrawals"),
     path("house-withdraw/", views.ops_house_withdraw, name="ops-house-withdraw"),
     path("settings/", views.ops_settings, name="ops-settings"),

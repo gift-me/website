@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 
 from .models import (
     BirthdayPage,
@@ -15,6 +16,21 @@ from .models import (
     WithdrawalAuthorization,
     WithdrawalRequest,
 )
+
+
+def _image_preview(image, alt="Image"):
+    if not image:
+        return "—"
+    try:
+        url = image.url
+    except (AttributeError, ValueError):
+        return "—"
+    return format_html(
+        '<a href="{0}" target="_blank" rel="noopener"><img src="{0}" alt="{1}" '
+        'style="width:64px;height:64px;object-fit:cover;border-radius:8px;" /></a>',
+        url,
+        alt,
+    )
 
 
 class GiftOptionInline(admin.TabularInline):
@@ -43,7 +59,7 @@ class MpesaPaymentAdmin(admin.ModelAdmin):
         "payer_phone",
         "created_at",
     )
-    list_filter = ("status", "created_at", "profile")
+    list_filter = ("status", "created_at", "updated_at", "profile", "catalog_gift", "wishlist_item")
     search_fields = (
         "account_reference",
         "checkout_request_id",
@@ -61,18 +77,23 @@ class MpesaPaymentAdmin(admin.ModelAdmin):
 
 @admin.register(CatalogGift)
 class CatalogGiftAdmin(admin.ModelAdmin):
-    list_display = ("name", "amount", "is_active", "display_order", "created_at")
+    list_display = ("name", "image_preview", "amount", "is_active", "display_order", "created_at")
     list_editable = ("is_active", "display_order")
     list_filter = ("is_active", "created_at")
     search_fields = ("name", "description")
     ordering = ("display_order", "id")
-    fields = ("name", "description", "amount", "image", "is_active", "display_order")
+    readonly_fields = ("image_preview",)
+    fields = ("name", "description", "amount", "image", "image_preview", "is_active", "display_order")
+
+    @admin.display(description="Image")
+    def image_preview(self, obj):
+        return _image_preview(obj.image, obj.name)
 
 
 @admin.register(BirthdayPage)
 class BirthdayPageAdmin(admin.ModelAdmin):
     list_display = ("name", "owner", "slug", "age_turning", "birthday_date", "goal_amount", "created_at")
-    list_filter = ("birthday_date", "created_at")
+    list_filter = ("birthday_date", "created_at", "owner")
     prepopulated_fields = {"slug": ("name",)}
     search_fields = ("name", "slug", "owner__email")
     date_hierarchy = "created_at"
@@ -83,7 +104,7 @@ class BirthdayPageAdmin(admin.ModelAdmin):
 @admin.register(GiftOption)
 class GiftOptionAdmin(admin.ModelAdmin):
     list_display = ("label", "page", "amount", "display_order", "icon")
-    list_filter = ("page",)
+    list_filter = ("page", "amount")
     search_fields = ("label", "page__name", "page__slug")
     ordering = ("page", "display_order", "id")
     raw_id_fields = ("page",)
@@ -92,7 +113,7 @@ class GiftOptionAdmin(admin.ModelAdmin):
 @admin.register(GiftContribution)
 class GiftContributionAdmin(admin.ModelAdmin):
     list_display = ("page", "display_sender", "amount", "is_anonymous", "created_at")
-    list_filter = ("is_anonymous", "created_at", "page")
+    list_filter = ("is_anonymous", "created_at", "page", "option")
     search_fields = ("sender_name", "page__name", "page__slug", "message")
     date_hierarchy = "created_at"
     raw_id_fields = ("page", "option")
@@ -110,7 +131,7 @@ class WithdrawalRequestAdmin(admin.ModelAdmin):
         "mpesa_transaction_id",
         "created_at",
     )
-    list_filter = ("status", "created_at")
+    list_filter = ("status", "created_at", "processed_at", "page")
     search_fields = (
         "profile__username",
         "profile__user__email",
@@ -129,18 +150,23 @@ class WithdrawalRequestAdmin(admin.ModelAdmin):
 @admin.register(WithdrawalAuthorization)
 class WithdrawalAuthorizationAdmin(admin.ModelAdmin):
     list_display = ("profile", "amount", "payout_phone", "expires_at", "verified_at", "created_at")
-    list_filter = ("verified_at", "created_at")
+    list_filter = ("verified_at", "expires_at", "created_at", "withdrawal")
     search_fields = ("profile__user__email", "payout_phone")
     readonly_fields = ("created_at", "verified_at", "code_hash")
 
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "username", "gift_slug", "display_name", "setup_completed", "birthday_date")
+    list_display = ("user", "profile_picture_preview", "username", "gift_slug", "display_name", "setup_completed", "birthday_date")
     search_fields = ("user__email", "username", "gift_slug", "wishlist_slug", "display_name")
-    list_filter = ("setup_completed", "birthday_date")
+    list_filter = ("setup_completed", "birthday_date", "user__is_active", "user__date_joined")
     raw_id_fields = ("user",)
     inlines = [WishlistItemInline]
+    readonly_fields = ("profile_picture_preview",)
+
+    @admin.display(description="Profile picture")
+    def profile_picture_preview(self, obj):
+        return _image_preview(obj.profile_picture, obj.display_name or obj.username or "Profile picture")
 
 
 @admin.register(WishlistItem)
@@ -164,7 +190,7 @@ class UserGiftReceivedAdmin(admin.ModelAdmin):
         "is_anonymous",
         "created_at",
     )
-    list_filter = ("is_anonymous", "created_at", "profile")
+    list_filter = ("is_anonymous", "created_at", "profile", "catalog_gift", "wishlist_item", "payment__status")
     search_fields = (
         "sender_name",
         "gift_label",
@@ -180,7 +206,7 @@ class UserGiftReceivedAdmin(admin.ModelAdmin):
 @admin.register(HouseWithdrawal)
 class HouseWithdrawalAdmin(admin.ModelAdmin):
     list_display = ("amount", "mpesa_withdrawal_fee", "payout_phone", "status", "created_by", "created_at")
-    list_filter = ("status", "created_at")
+    list_filter = ("status", "created_at", "created_by")
     search_fields = ("payout_phone", "note", "created_by__email")
     date_hierarchy = "created_at"
     raw_id_fields = ("created_by",)
@@ -188,8 +214,32 @@ class HouseWithdrawalAdmin(admin.ModelAdmin):
 
 @admin.register(SiteSettings)
 class SiteSettingsAdmin(admin.ModelAdmin):
-    list_display = ("contact_email", "contact_phone", "website_url", "platform_fee_percent", "platform_fee_cap", "updated_at")
+    list_display = ("contact_email", "contact_phone", "website_url", "logo_preview", "favicon_preview", "platform_fee_percent", "platform_fee_cap", "updated_at")
     search_fields = ("contact_email", "contact_phone")
+    readonly_fields = ("logo_preview", "favicon_preview", "updated_at")
+    fields = (
+        "contact_email",
+        "contact_phone",
+        "website_url",
+        "facebook_url",
+        "tiktok_url",
+        "instagram_url",
+        "logo",
+        "logo_preview",
+        "favicon",
+        "favicon_preview",
+        "platform_fee_percent",
+        "platform_fee_cap",
+        "updated_at",
+    )
+
+    @admin.display(description="Logo")
+    def logo_preview(self, obj):
+        return _image_preview(obj.logo, "Site logo")
+
+    @admin.display(description="Favicon")
+    def favicon_preview(self, obj):
+        return _image_preview(obj.favicon, "Site favicon")
 
 
 @admin.register(PaymentAttempt)

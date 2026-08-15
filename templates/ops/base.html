@@ -1,4 +1,4 @@
-{% load static %}
+{% load static compress %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,8 +8,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {% compress css %}
     <link rel="stylesheet" href="{% static 'css/ops-admin.css' %}">
     {% block ops_extra_css %}{% endblock %}
+    {% endcompress %}
 </head>
 <body class="ops-body">
     {% if user.is_authenticated and user.is_staff %}
@@ -76,9 +78,6 @@
             </div>
             <div class="ops-topbar-right">
                 <span class="ops-welcome">Welcome, {{ user.get_username }}</span>
-                <button type="button" class="ops-house-withdraw-btn" id="ops-open-house-withdraw" title="House profit withdrawal">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0l4-4m-4 4l-4-4M4 19h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                </button>
             </div>
         </header>
         {% endif %}
@@ -103,7 +102,9 @@
         </div>
     </div>
 
+    {% compress js %}
     <script src="{% static 'js/ops-admin.js' %}"></script>
     {% block ops_scripts %}{% endblock %}
+    {% endcompress %}
 </body>
 </html>

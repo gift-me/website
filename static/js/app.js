@@ -334,23 +334,50 @@ function initQrDownload() {
 }
 
 function buildWhatsAppShareUrl(url, type, displayName, isBirthday) {
-    const name = (displayName || "me").trim();
     let text = "";
     if (type === "wishlist") {
         text = `Hey! Check out my wishlist and help me fulfill a dream: ${url}`;
-    } else if (isBirthday) {
-        text = `It's my birthday! Send me a gift and make my day special: ${url}`;
     } else {
-        text = `I'd love a surprise from you! Send me a gift on GiftMe: ${url}`;
+        text = url;
     }
     return `https://wa.me/?text=${encodeURIComponent(text)}`;
 }
 
+async function shareImageWithCaption(imageUrl, caption) {
+    if (typeof navigator.share !== "function" || typeof File === "undefined") return false;
+
+    try {
+        const response = await fetch(imageUrl, { credentials: "same-origin" });
+        if (!response.ok) return false;
+
+        const blob = await response.blob();
+        const imageFile = new File([blob], "birthday.png", {
+            type: blob.type || "image/png",
+        });
+        if (navigator.canShare && !navigator.canShare({ files: [imageFile] })) return false;
+
+        await navigator.share({
+            files: [imageFile],
+            text: caption,
+        });
+        return true;
+    } catch (error) {
+        // Closing the native share sheet is an intentional action, not a fallback case.
+        return error?.name === "AbortError";
+    }
+}
+
 function initWhatsAppShare() {
     document.querySelectorAll(".dash-share-wa").forEach((btn) => {
-        btn.addEventListener("click", () => {
+        btn.addEventListener("click", async () => {
             const url = (btn.dataset.shareUrl || "").trim();
             if (!url) return;
+
+            if (btn.dataset.shareType === "gift" && btn.dataset.shareImage) {
+                const nativeShareHandled = await shareImageWithCaption(btn.dataset.shareImage, url);
+                if (nativeShareHandled) return;
+            }
+
             const shareUrl = buildWhatsAppShareUrl(
                 url,
                 btn.dataset.shareType,

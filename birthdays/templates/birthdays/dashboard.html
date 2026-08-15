@@ -100,7 +100,7 @@
 
                 </button>
 
-                <button type="button" class="dash-share-wa" data-share-url="{{ gift_url }}" data-share-type="gift" data-display-name="{{ display_name }}" data-is-birthday="{% if is_birthday_today %}1{% else %}0{% endif %}" aria-label="Share gifting link on WhatsApp" title="Share on WhatsApp">
+                <button type="button" class="dash-share-wa" data-share-url="{{ gift_url }}" data-share-type="gift" data-share-image="{% static 'images/birthday.png' %}" data-display-name="{{ display_name }}" data-is-birthday="{% if is_birthday_today %}1{% else %}0{% endif %}" aria-label="Share gifting link on WhatsApp" title="Share on WhatsApp">
 
                     <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
 
@@ -593,7 +593,7 @@
         <button type="button" class="dash-modal-close" data-close-modal="withdraw-modal" aria-label="Close" title="Close">&times;</button>
 
         <h2 id="withdraw-modal-title">Withdraw</h2>
-        <p class="dash-modal-sub" id="withdraw-modal-sub">Minimum withdrawal KES 500. We’ll email a one-time code to <strong>{{ user.email }}</strong> before sending funds.</p>
+        <p class="dash-modal-sub" id="withdraw-modal-sub">Minimum withdrawal KES {{ withdrawal_min_amount|floatformat:0 }}. We’ll email a one-time code to <strong>{{ user.email }}</strong> before sending funds.</p>
         <p class="dash-modal-error" id="withdraw-modal-error" hidden></p>
 
         <div id="withdraw-state-form">
@@ -602,7 +602,7 @@
                 <div class="modal-body-fields">
                     <div class="field">
                         <label for="withdraw-amount">Amount (KES)</label>
-                        <input id="withdraw-amount" name="amount" type="number" min="500" max="{{ available_balance|floatformat:0 }}" step="1" placeholder="500" required>
+                        <input id="withdraw-amount" name="amount" type="number" min="{{ withdrawal_min_amount|floatformat:0 }}" max="{{ available_balance|floatformat:0 }}" step="1" placeholder="{{ withdrawal_min_amount|floatformat:0 }}" required>
                     </div>
                     <div class="field">
                         <label for="withdraw-phone">M-Pesa number</label>
@@ -634,10 +634,11 @@
         </div>
 
         <div id="withdraw-state-loading" class="dash-modal-state" hidden>
-            <p>Processing your withdrawal with M-Pesa…</p>
+            <p>Your withdrawal is being processed. This normally takes up to 24 hours.</p>
         </div>
 
         <div id="withdraw-state-success" class="dash-modal-state" hidden>
+            <button type="button" class="dash-modal-close dash-modal-success-close" data-close-modal="withdraw-modal" aria-label="Close withdrawal message" title="Close">&times;</button>
             <p id="withdraw-success-message">Withdrawal submitted successfully.</p>
             <div class="modal-actions">
                 <button type="button" class="dash-btn dash-btn-primary" data-close-modal="withdraw-modal" title="Close">Done</button>
@@ -650,9 +651,12 @@
 
 {% endblock %}
 
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+{% endblock %}
+
 {% block scripts %}
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="{% static 'js/withdraw-modal.js' %}"></script>
 
 {% endblock %}

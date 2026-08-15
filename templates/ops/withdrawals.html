@@ -15,23 +15,36 @@
     <table class="ops-table">
         <thead>
             <tr>
-                <th>Date</th>
-                <th>User</th>
+                <th>Name</th>
                 <th>Amount</th>
-                <th>M-Pesa fee</th>
+                <th>Requested</th>
                 <th>Phone</th>
                 <th>Status</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for w in withdrawals %}
             <tr>
-                <td>{{ w.created_at|date:"M j, H:i" }}</td>
-                <td>{{ w.profile.username|default:w.profile.user.email }}</td>
+                <td>{% firstof w.profile.display_name w.profile.username w.profile.user.email %}</td>
                 <td>KES {{ w.amount|floatformat:0 }}</td>
-                <td>KES {{ w.mpesa_withdrawal_fee|floatformat:0 }}</td>
+                <td>{{ w.created_at|date:"M j, Y H:i" }}</td>
                 <td>{{ w.payout_phone }}</td>
                 <td><span class="ops-badge ops-badge-{{ w.status }}">{{ w.status }}</span></td>
+                <td>
+                    {% if w.status == 'pending' or w.status == 'processing' %}
+                    <form method="post" action="{% url 'ops-withdrawal-action' w.pk 'accept' %}" style="display:inline">
+                        {% csrf_token %}
+                        <button type="submit" class="ops-btn-primary">Accept</button>
+                    </form>
+                    <form method="post" action="{% url 'ops-withdrawal-action' w.pk 'reject' %}" style="display:inline">
+                        {% csrf_token %}
+                        <button type="submit" class="ops-btn-secondary">Reject</button>
+                    </form>
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
             </tr>
             {% empty %}
             <tr><td colspan="6">No withdrawals found.</td></tr>

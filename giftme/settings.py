@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'compressor',
     'allauth',
     'allauth.account',
     'birthdays.apps.BirthdaysConfig',
@@ -194,6 +195,16 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    'compressor.finders.CompressorFinder',
+]
+
+# Runtime compression is enabled by default outside development. Offline
+# compression remains opt-in and requires running `python manage.py compress`.
+COMPRESS_ENABLED = _env_bool('COMPRESS_ENABLED', not DEBUG)
+COMPRESS_OFFLINE = _env_bool('COMPRESS_OFFLINE', IS_PRODUCTION)
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -244,7 +255,7 @@ MPESA_B2C_COMMAND_ID = os.environ.get("MPESA_B2C_COMMAND_ID", "BusinessPayment")
 MPESA_B2C_RESULT_URL = os.environ.get("MPESA_B2C_RESULT_URL", "")
 MPESA_B2C_TIMEOUT_URL = os.environ.get("MPESA_B2C_TIMEOUT_URL", "")
 
-WITHDRAWAL_MIN_AMOUNT = 500
+WITHDRAWAL_MIN_AMOUNT = Decimal(os.environ.get("WITHDRAWAL_MIN_AMOUNT", "500"))
 WITHDRAWAL_OTP_EXPIRY_MINUTES = int(os.environ.get("WITHDRAWAL_OTP_EXPIRY_MINUTES", "10"))
 
 # Email (verification, password reset, withdrawal OTP)

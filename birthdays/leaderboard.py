@@ -41,4 +41,8 @@ def get_top_gifters(profile, limit=10):
     rows.sort(key=lambda r: r["total"], reverse=True)
     for idx, row in enumerate(rows[:limit], start=1):
         row["rank"] = idx
+        # Public gifting pages never expose contributor names. The dashboard
+        # uses UserGiftReceived directly, so account owners still see the
+        # names their supporters entered there.
+        row["name"] = f"Anonymous {idx}"
     return rows[:limit]
