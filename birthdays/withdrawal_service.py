@@ -241,7 +241,10 @@ verify_and_disburse = verify_and_create_withdrawal
 
 @transaction.atomic
 def approve_manual_withdrawal(withdrawal_id):
-    withdrawal = WithdrawalRequest.objects.select_for_update().select_related("profile__user").get(pk=withdrawal_id)
+    # Lock only the withdrawal row. ``profile`` is nullable for legacy
+    # records, so combining select_for_update() with select_related() would
+    # produce an outer join that PostgreSQL refuses to lock.
+    withdrawal = WithdrawalRequest.objects.select_for_update().get(pk=withdrawal_id)
     if withdrawal.status not in (WithdrawalRequest.Status.PENDING, WithdrawalRequest.Status.PROCESSING):
         raise MpesaError("This withdrawal has already been resolved.")
 
@@ -255,7 +258,9 @@ def approve_manual_withdrawal(withdrawal_id):
 
 @transaction.atomic
 def reject_manual_withdrawal(withdrawal_id, reason=""):
-    withdrawal = WithdrawalRequest.objects.select_for_update().select_related("profile__user").get(pk=withdrawal_id)
+    # See approve_manual_withdrawal(): lock the concrete request row first and
+    # let the email helper load its related profile separately if needed.
+    withdrawal = WithdrawalRequest.objects.select_for_update().get(pk=withdrawal_id)
     if withdrawal.status not in (WithdrawalRequest.Status.PENDING, WithdrawalRequest.Status.PROCESSING):
         raise MpesaError("This withdrawal has already been resolved.")
 
