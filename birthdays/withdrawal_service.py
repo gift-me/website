@@ -155,7 +155,13 @@ def initiate_withdrawal_authorization(profile: UserProfile, amount_raw, payout_p
     amount = _validate_amount(amount_raw)
     payout_phone = _validate_payout_phone(payout_phone_raw)
 
-    if amount > profile.available_balance:
+    # Keep unfinished OTP authorizations from allowing two requests to spend
+    # the same funds, without exposing that temporary reservation on the
+    # dashboard balance.
+    available_for_request = (
+        profile.total_raised - profile.reserved_withdrawal_total - profile.pending_otp_total
+    )
+    if amount > available_for_request:
         raise MpesaError("Withdrawal amount exceeds available balance.")
 
     profile.payout_phone = payout_phone

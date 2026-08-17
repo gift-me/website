@@ -270,7 +270,11 @@ class UserProfile(models.Model):
 
     @property
     def available_balance(self):
-        return self.total_raised - self.reserved_withdrawal_total - self.pending_otp_total
+        # An OTP authorization is only an unfinished attempt. It must not make
+        # the dashboard look as if money has already been withdrawn. Once the
+        # OTP is verified, WithdrawalRequest is created and its status reserves
+        # the amount through reserved_withdrawal_total.
+        return self.total_raised - self.reserved_withdrawal_total
 
     @property
     def gifts_count(self):
