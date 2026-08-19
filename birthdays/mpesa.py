@@ -77,7 +77,7 @@ def parse_b2c_result(body):
 
 
 def normalize_phone(phone):
-    """Normalize Kenyan numbers to 2547XXXXXXXX."""
+    """Normalize Kenyan numbers to 254XXXXXXXXX."""
     digits = "".join(c for c in f"{phone}" if c.isdigit())
     if digits.startswith("254") and len(digits) == 12:
         return digits
@@ -356,6 +356,7 @@ class MpesaClient:
                 timeout=30,
             )
         except requests.RequestException as exc:
+            print(exc)
             raise MpesaError("Could not connect to M-Pesa. Please try again.") from exc
         try:
             data = response.json()

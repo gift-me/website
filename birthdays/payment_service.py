@@ -17,7 +17,7 @@ from .payment_expiry import expire_stale_pending_payments
 from .payment_idempotency import remember_idempotent_payment, resolve_idempotent_payment
 from .payment_limits import check_stk_rate_limits
 
-MPESA_PATTERN = re.compile(r"^07\d{8}$")
+MPESA_PATTERN = re.compile(r"^(?:0[17]\d{8}|254[17]\d{8})$")
 MESSAGE_MAX_LENGTH = 220
 
 
