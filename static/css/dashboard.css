@@ -292,12 +292,12 @@
     color: var(--muted);
 }
 
-/* Payout */
-.dash-payout {
+/* Withdraw */
+.dash-withdraw {
     margin-bottom: 1rem;
 }
 
-.dash-payout h2 {
+.dash-withdraw h2 {
     margin: 0 0 0.25rem;
 }
 
@@ -323,12 +323,12 @@
     gap: 0.75rem;
 }
 
-.payout-form .field label {
+.withdraw-form .field label {
     font-size: 0.85rem;
     color: var(--muted);
 }
 
-.payout-form input {
+.withdraw-form input {
     border: 1px solid var(--line);
     border-radius: 10px;
     padding: 0.65rem 0.75rem;
@@ -338,8 +338,8 @@
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.payout-form input:focus,
-.payout-form input:focus-visible,
+.withdraw-form input:focus,
+.withdraw-form input:focus-visible,
 .dash-modal-card input:focus,
 .dash-modal-card input:focus-visible,
 .dash-modal-card textarea:focus,
@@ -348,7 +348,7 @@
     box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.12);
 }
 
-.payout-form .dash-btn-primary {
+.withdraw-form .dash-btn-primary {
     width: 100%;
     margin-top: 0.5rem;
     padding: 0.75rem;
@@ -988,7 +988,7 @@ button.dash-btn-primary[type="submit"],
     color: rgba(34, 34, 34, 0.55);
 }
 
-.payout-otp-input {
+.withdraw-otp-input {
     letter-spacing: 0.35em;
     font-weight: 700;
     font-size: 1.15rem;

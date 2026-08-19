@@ -8,14 +8,23 @@
     <meta name="description" content="{% block meta_description %}GiftMe turns celebrations into beautiful public gift pages where friends and family contribute meaningful gifts. Gift better. Celebrate louder.{% endblock %}">
     <link rel="icon" href="{% static 'images/favicon.svg' %}" type="image/svg+xml">
     <link rel="apple-touch-icon" href="{% static 'images/favicon.svg' %}">
+    {% static 'images/favicon.svg' as social_image_url %}
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="GiftMe | Gift better. Celebrate louder.">
+    <meta property="og:description" content="Create a beautiful gift page and let the people who matter celebrate with you.">
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ social_image_url }}">
+    <meta property="og:image:alt" content="GiftMe">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="GiftMe | Gift better. Celebrate louder.">
+    <meta name="twitter:description" content="Create a beautiful gift page and let the people who matter celebrate with you.">
+    <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{{ social_image_url }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
     <link href="https://api.fontshare.com/v2/css?f[]=clash-display@500,600,700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="{% static 'css/base.css' %}">
-    <link rel="stylesheet" href="{% static 'css/living-ink.css' %}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -46,6 +55,8 @@
             },
         };
     </script>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/living-ink.css' %}">
     <link rel="stylesheet" href="{% static 'css/header.css' %}">
     {% block extra_css %}{% endblock %}
     {% block extra_head %}{% endblock %}

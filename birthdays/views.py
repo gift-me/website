@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import messages
 from decimal import Decimal, InvalidOperation
 from django.contrib.auth.decorators import login_required
@@ -98,7 +99,7 @@ def dashboard(request):
     wishlist_url = request.build_absolute_uri(profile.get_wishlist_url_path())
     gifts_qs = profile.gifts_received.all()
     supporters = gifts_qs[:20]
-    payouts = profile.payouts.filter(kind="user")[:20]
+    withdrawals = profile.withdrawals.all()[:20]
     wishlist_items = profile.wishlist_items.all()
     supporters_count = gifts_qs.values("sender_name", "is_anonymous").distinct().count()
     today = timezone.now().date()
@@ -117,11 +118,12 @@ def dashboard(request):
             "gift_url": gift_url,
             "wishlist_url": wishlist_url,
             "supporters": supporters,
-            "payouts": payouts,
+            "withdrawals": withdrawals,
             "wishlist_items": wishlist_items,
             "total_revenue": profile.total_raised,
             "available_balance": profile.available_balance,
-            "total_paid_out": profile.total_paid_out,
+            "withdrawal_min_amount": settings.WITHDRAWAL_MIN_AMOUNT,
+            "total_withdrawn": profile.total_withdrawn,
             "gifts_count": profile.gifts_count,
             "supporters_count": supporters_count,
             "profile_incomplete": not profile.setup_completed,

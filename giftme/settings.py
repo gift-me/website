@@ -26,12 +26,20 @@ except ImportError:
     pass
 
 
+def _env_value(name, default=""):
+    """Read an environment value and remove optional dotenv-style quotes."""
+    value = str(os.environ.get(name, default)).strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in ('"', "'"):
+        value = value[1:-1].strip()
+    return value
+
+
 def _env_bool(name, default=False):
-    return os.environ.get(name, str(default)).lower() in ("1", "true", "yes")
+    return _env_value(name, str(default)).lower() in ("1", "true", "yes")
 
 
 def _env_list(name, default=""):
-    raw = os.environ.get(name, default)
+    raw = _env_value(name, default)
     return [item.strip() for item in raw.split(",") if item.strip()]
 
 
@@ -194,9 +202,13 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
 
-MEDIA_URL = 'media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = _env_value("MEDIA_URL", "/media/")
+MEDIA_ROOT = Path(_env_value("MEDIA_ROOT", str(BASE_DIR / "media")))
 
 if IS_PRODUCTION:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -224,20 +236,20 @@ LOGIN_REDIRECT_URL = "dashboard"
 LOGOUT_REDIRECT_URL = "home"
 
 # M-Pesa Daraja (Lipa na M-Pesa)
-MPESA_ENV = os.environ.get("MPESA_ENV", "sandbox")
-MPESA_BASE_URL = os.environ.get(
+MPESA_ENV = _env_value("MPESA_ENV", "sandbox")
+MPESA_BASE_URL = _env_value(
     "MPESA_BASE_URL",
     "https://sandbox.safaricom.co.ke" if MPESA_ENV == "sandbox" else "https://api.safaricom.co.ke",
 )
 MPESA_CONSUMER_KEY = os.environ.get("MPESA_CONSUMER_KEY", "")
 MPESA_CONSUMER_SECRET = os.environ.get("MPESA_CONSUMER_SECRET", "")
 MPESA_SHORTCODE = os.environ.get("MPESA_SHORTCODE", "")
-MPESA_TILL = os.environ.get("MPESA_TILL", "")
+MPESA_TILL = _env_value("MPESA_TILL")
 MPESA_PASSKEY = os.environ.get("MPESA_PASSKEY", "")
 MPESA_CALLBACK_URL = os.environ.get("MPESA_CALLBACK_URL", "")
-MPESA_TRANSACTION_TYPE = os.environ.get("MPESA_TRANSACTION_TYPE", "CustomerBuyGoodsOnline")
+MPESA_TRANSACTION_TYPE = os.environ.get("MPESA_TRANSACTION_TYPE", "CustomerPayBillOnline")
 
-# M-Pesa B2C (payouts)
+# M-Pesa B2C (withdrawals)
 MPESA_B2C_SHORTCODE = os.environ.get("MPESA_B2C_SHORTCODE", "")
 MPESA_B2C_INITIATOR_NAME = os.environ.get("MPESA_B2C_INITIATOR_NAME", "")
 MPESA_B2C_SECURITY_CREDENTIAL = os.environ.get("MPESA_B2C_SECURITY_CREDENTIAL", "")
@@ -245,24 +257,34 @@ MPESA_B2C_COMMAND_ID = os.environ.get("MPESA_B2C_COMMAND_ID", "BusinessPayment")
 MPESA_B2C_RESULT_URL = os.environ.get("MPESA_B2C_RESULT_URL", "")
 MPESA_B2C_TIMEOUT_URL = os.environ.get("MPESA_B2C_TIMEOUT_URL", "")
 
-PAYOUT_MIN_AMOUNT = int(os.environ.get("PAYOUT_MIN_AMOUNT", os.environ.get("WITHDRAWAL_MIN_AMOUNT", "500")))
-PAYOUT_OTP_EXPIRY_MINUTES = int(
-    os.environ.get("PAYOUT_OTP_EXPIRY_MINUTES", os.environ.get("WITHDRAWAL_OTP_EXPIRY_MINUTES", "10"))
-)
-B2C_QUERY_MIN_AGE_SECONDS = int(os.environ.get("B2C_QUERY_MIN_AGE_SECONDS", "45"))
+WITHDRAWAL_MIN_AMOUNT = Decimal(os.environ.get("WITHDRAWAL_MIN_AMOUNT", "500"))
+WITHDRAWAL_OTP_EXPIRY_MINUTES = int(os.environ.get("WITHDRAWAL_OTP_EXPIRY_MINUTES", "10"))
 
-# Email (verification, password reset, payout OTP)
-EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
-EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
-EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+# Email (verification, password reset, withdrawal OTP). Brevo's API uses
+# HTTPS/443, which is available even when the deployment blocks SMTP ports.
+BREVO_API_KEY = _env_value("BREVO_API_KEY")
+BREVO_API_URL = _env_value(
+    "BREVO_API_URL",
+    "https://api.brevo.com/v3/smtp/email",
+)
+EMAIL_HOST = _env_value("EMAIL_HOST")
+EMAIL_PORT = int(_env_value("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = _env_value("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = _env_value("EMAIL_HOST_PASSWORD")
 EMAIL_USE_TLS = _env_bool("EMAIL_USE_TLS", True)
 EMAIL_USE_SSL = _env_bool("EMAIL_USE_SSL", False)
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "GiftMe <info@giftme.co.ke>")
+# Keep a blocked SMTP connection from hanging signup until the web worker dies.
+EMAIL_TIMEOUT = int(_env_value("EMAIL_TIMEOUT", "20"))
+DEFAULT_FROM_EMAIL = _env_value(
+    "DEFAULT_FROM_EMAIL",
+    "GiftMe <info@giftme.co.ke>",
+)
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
-# Prefer SMTP whenever a host is configured. Console backend only dumps to the terminal.
-_email_backend = os.environ.get("EMAIL_BACKEND", "").strip()
-if EMAIL_HOST and (
+# Prefer the Brevo API when configured. Otherwise use SMTP or the local console.
+_email_backend = _env_value("EMAIL_BACKEND")
+if BREVO_API_KEY:
+    EMAIL_BACKEND = "birthdays.email_backend.BrevoEmailBackend"
+elif EMAIL_HOST and (
     not _email_backend
     or _email_backend.endswith("console.EmailBackend")
 ):

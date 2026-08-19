@@ -83,7 +83,6 @@ def payment_status(request, payment_id):
     if not payment:
         return _json_error("Payment not found.", 404)
 
-    expire_stale_pending_payments(payment.profile_id)
     payment.refresh_from_db()
 
     if payment.status == MpesaPayment.Status.PENDING and payment.checkout_request_id:
@@ -101,9 +100,15 @@ def payment_status(request, payment_id):
                         mark_payment_completed(payment, result_desc=query.get("ResultDesc", "Success"))
                     elif f"{query.get('ResultCode', '')}" not in ("", "1032"):
                         mark_payment_failed(payment, query.get("ResultDesc", "Payment failed."))
-                except MpesaError:
-                    pass
+                except MpesaError as exc:
+                    logger.warning("STK status query failed for payment %s: %s", payment.pk, exc)
                 cache_set(throttle_key, 1, timeout=20)
+        payment.refresh_from_db()
+
+    # Query the provider before expiring a stale local record. A delayed
+    # successful callback can still recover a stale record below.
+    if payment.status == MpesaPayment.Status.PENDING:
+        expire_stale_pending_payments(payment.profile_id)
         payment.refresh_from_db()
 
     return JsonResponse({"success": True, **payment_status_payload(payment, request)})
@@ -114,33 +119,41 @@ def payment_status(request, payment_id):
 def mpesa_callback(request):
     try:
         body = json.loads(request.body or "{}")
+        parsed = get_mpesa_client().parse_stk_callback(body)
+        checkout_id = parsed.get("checkout_request_id")
+
+        if not checkout_id:
+            logger.warning("M-Pesa callback missing CheckoutRequestID")
+            return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
+
+        payment = MpesaPayment.objects.filter(checkout_request_id=checkout_id).first()
+        if not payment:
+            logger.warning("M-Pesa callback for unknown CheckoutRequestID: %s", checkout_id)
+            return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
+
+        payment.refresh_from_db()
+        logger.info(
+            "M-Pesa callback received payment=%s checkout=%s result_code=%s",
+            payment.pk,
+            checkout_id,
+            parsed.get("result_code"),
+        )
+
+        if parsed.get("success"):
+            # mark_payment_completed is idempotent and can recover a delayed
+            # success callback after a local pending timeout.
+            mark_payment_completed(
+                payment,
+                mpesa_receipt=parsed.get("mpesa_receipt", ""),
+                result_desc=parsed.get("result_desc", "Success"),
+            )
+        elif payment.status == MpesaPayment.Status.PENDING:
+            mark_payment_failed(payment, parsed.get("result_desc", "Payment failed or cancelled."))
     except json.JSONDecodeError:
         logger.warning("M-Pesa callback invalid JSON")
-        return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
-
-    parsed = get_mpesa_client().parse_stk_callback(body)
-    checkout_id = parsed.get("checkout_request_id")
-
-    if not checkout_id:
-        return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
-
-    payment = MpesaPayment.objects.filter(checkout_request_id=checkout_id).first()
-    if not payment:
-        logger.warning("M-Pesa callback for unknown CheckoutRequestID: %s", checkout_id)
-        return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
-
-    expire_stale_pending_payments(payment.profile_id)
-    payment.refresh_from_db()
-    if payment.status != MpesaPayment.Status.PENDING:
-        return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
-
-    if parsed.get("success"):
-        mark_payment_completed(
-            payment,
-            mpesa_receipt=parsed.get("mpesa_receipt", ""),
-            result_desc=parsed.get("result_desc", "Success"),
-        )
-    else:
-        mark_payment_failed(payment, parsed.get("result_desc", "Payment failed or cancelled."))
+    except Exception:
+        # Keep the provider acknowledgement quick; the status endpoint can
+        # recover the payment through stk_query if callback processing fails.
+        logger.exception("M-Pesa callback processing failed")
 
     return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})

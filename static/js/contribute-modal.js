@@ -163,7 +163,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 } else if (data.status === "failed" || data.status === "cancelled") {
                     stopPolling();
                     showState("form");
-                    idempotencyKey = newIdempotencyKey();
                     showError(data.result_desc || "Payment failed. Please try again.");
                 }
             } catch (err) {
@@ -177,7 +176,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 showState("form");
                 showError("Payment is taking longer than expected. If you paid, refresh the page.");
             }
-        }, 120000);
+        }, 300000);
     }
 
     async function submitPayment(event) {
@@ -213,7 +212,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (!res.ok || !data.success) {
                 showState("form");
-                idempotencyKey = newIdempotencyKey();
                 showError(data.error || "Could not start payment.");
                 return;
             }
@@ -221,7 +219,6 @@ document.addEventListener("DOMContentLoaded", () => {
             pollPaymentStatus(data.payment_id);
         } catch (err) {
             showState("form");
-            idempotencyKey = newIdempotencyKey();
             showError("Network error. Please try again.");
         }
     }

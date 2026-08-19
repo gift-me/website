@@ -92,18 +92,14 @@ class BirthdayPage(models.Model):
 
     @property
     def total_withdrawn(self):
-        value = self.payouts.filter(status=Payout.Status.APPROVED).aggregate(
+        value = self.withdrawals.filter(status=WithdrawalRequest.Status.APPROVED).aggregate(
             total=models.Sum("amount")
         )["total"] or 0
         return value
 
     @property
-    def total_paid_out(self):
-        return self.total_withdrawn
-
-    @property
     def available_balance(self):
-        return self.total_raised - self.total_paid_out
+        return self.total_raised - self.total_withdrawn
 
     @property
     def gifts_count(self):
@@ -161,19 +157,7 @@ class GiftContribution(models.Model):
         return f"{self.display_sender} -> {self.page.slug} ({self.amount})"
 
 
-class Payout(models.Model):
-    """
-    Single payout ledger for platform disbursements (user payouts, house, etc.).
-
-    User balance is only permanently deducted when status becomes APPROVED
-    (B2C ResultURL success, or a late status query confirming the transfer).
-    PROCESSING holds funds so the same balance cannot be spent twice.
-    """
-
-    class Kind(models.TextChoices):
-        USER = "user", "User payout"
-        HOUSE = "house", "House payout"
-
+class WithdrawalRequest(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
         PROCESSING = "processing", "Processing"
@@ -181,56 +165,40 @@ class Payout(models.Model):
         FAILED = "failed", "Failed"
         REJECTED = "rejected", "Rejected"
 
-    kind = models.CharField(max_length=20, choices=Kind.choices, default=Kind.USER, db_index=True)
     profile = models.ForeignKey(
-        "UserProfile", on_delete=models.CASCADE, related_name="payouts", null=True, blank=True
+        "UserProfile", on_delete=models.CASCADE, related_name="withdrawals", null=True, blank=True
     )
     page = models.ForeignKey(
-        BirthdayPage, on_delete=models.CASCADE, related_name="payouts", null=True, blank=True
+        BirthdayPage, on_delete=models.CASCADE, related_name="withdrawals", null=True, blank=True
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     payout_phone = models.CharField(max_length=20, blank=True)
-    payout_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    mpesa_withdrawal_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     note = models.CharField(max_length=180, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     conversation_id = models.CharField(max_length=64, blank=True, db_index=True)
     originator_conversation_id = models.CharField(max_length=64, blank=True, db_index=True)
     mpesa_transaction_id = models.CharField(max_length=32, blank=True)
     result_desc = models.CharField(max_length=255, blank=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="payouts_created",
-    )
     processed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["-created_at"]
 
-    @property
-    def total_debit(self):
-        return self.amount + self.payout_fee
-
     def __str__(self):
-        return f"{self.get_kind_display()} {self.amount} ({self.status})"
+        return f"Withdrawal {self.amount} ({self.status})"
 
 
-class PayoutAuthorization(models.Model):
-    """OTP gate for user payouts before a PROCESSING payout is created."""
-
-    profile = models.ForeignKey(
-        "UserProfile", on_delete=models.CASCADE, related_name="payout_authorizations"
-    )
+class WithdrawalAuthorization(models.Model):
+    profile = models.ForeignKey("UserProfile", on_delete=models.CASCADE, related_name="withdrawal_authorizations")
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     payout_phone = models.CharField(max_length=20)
     code_hash = models.CharField(max_length=128)
     expires_at = models.DateTimeField()
     verified_at = models.DateTimeField(null=True, blank=True)
-    payout = models.OneToOneField(
-        Payout,
+    withdrawal = models.OneToOneField(
+        WithdrawalRequest,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -242,7 +210,7 @@ class PayoutAuthorization(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"Payout OTP {self.profile_id} ({self.amount})"
+        return f"Withdrawal OTP {self.profile_id} ({self.amount})"
 
 
 class UserProfile(models.Model):
@@ -273,50 +241,40 @@ class UserProfile(models.Model):
     def total_raised(self):
         return self.gifts_received.aggregate(total=models.Sum("net_amount"))["total"] or 0
 
-    def _user_payouts(self):
-        return self.payouts.filter(kind=Payout.Kind.USER)
-
     @property
     def total_withdrawn(self):
-        """Permanently deducted balance — only after Safaricom confirms disbursement."""
-        approved = self._user_payouts().filter(status=Payout.Status.APPROVED)
+        approved = self.withdrawals.filter(status=WithdrawalRequest.Status.APPROVED)
         gross = approved.aggregate(total=models.Sum("amount"))["total"] or 0
-        fees = approved.aggregate(total=models.Sum("payout_fee"))["total"] or 0
+        fees = approved.aggregate(total=models.Sum("mpesa_withdrawal_fee"))["total"] or 0
         return gross + fees
 
     @property
-    def total_paid_out(self):
-        return self.total_withdrawn
-
-    @property
-    def in_flight_payout_total(self):
-        """Soft hold while B2C is pending/processing — not yet a permanent deduction."""
-        qs = self._user_payouts().filter(
-            status__in=[Payout.Status.PENDING, Payout.Status.PROCESSING]
+    def reserved_withdrawal_total(self):
+        qs = self.withdrawals.filter(
+            status__in=[
+                WithdrawalRequest.Status.PENDING,
+                WithdrawalRequest.Status.PROCESSING,
+                WithdrawalRequest.Status.APPROVED,
+            ]
         )
         amounts = qs.aggregate(total=models.Sum("amount"))["total"] or 0
-        fees = qs.aggregate(total=models.Sum("payout_fee"))["total"] or 0
+        fees = qs.aggregate(total=models.Sum("mpesa_withdrawal_fee"))["total"] or 0
         return amounts + fees
 
     @property
-    def reserved_payout_total(self):
-        """Approved deductions + in-flight holds."""
-        return self.total_paid_out + self.in_flight_payout_total
-
-    @property
-    def reserved_withdrawal_total(self):
-        return self.reserved_payout_total
-
-    @property
     def pending_otp_total(self):
-        return self.payout_authorizations.filter(
+        return self.withdrawal_authorizations.filter(
             verified_at__isnull=True,
             expires_at__gt=timezone.now(),
         ).aggregate(total=models.Sum("amount"))["total"] or 0
 
     @property
     def available_balance(self):
-        return self.total_raised - self.total_paid_out - self.in_flight_payout_total - self.pending_otp_total
+        # An OTP authorization is only an unfinished attempt. It must not make
+        # the dashboard look as if money has already been withdrawn. Once the
+        # OTP is verified, WithdrawalRequest is created and its status reserves
+        # the amount through reserved_withdrawal_total.
+        return self.total_raised - self.reserved_withdrawal_total
 
     @property
     def gifts_count(self):
@@ -439,6 +397,33 @@ class PaymentAttempt(models.Model):
 
     def __str__(self):
         return self.idempotency_key
+
+
+class HouseWithdrawal(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    payout_phone = models.CharField(max_length=20)
+    mpesa_withdrawal_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    note = models.CharField(max_length=180, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="house_withdrawals"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    @property
+    def total_debit(self):
+        return self.amount + self.mpesa_withdrawal_fee
+
+    def __str__(self):
+        return f"House withdrawal KES {self.amount} ({self.status})"
 
 
 class SiteSettings(models.Model):

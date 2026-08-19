@@ -32,15 +32,6 @@ def cache_add(key, value, timeout=None):
         return False
 
 
-def cache_delete(key):
-    try:
-        cache.delete(key)
-    except Exception as exc:
-        logger.warning("Cache delete failed (%s): %s", key, exc)
-        return False
-    return True
-
-
 def cache_incr(key):
     try:
         return cache.incr(key)

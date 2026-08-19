@@ -52,7 +52,7 @@
     }
 
     const modal = document.getElementById("ops-house-modal");
-    const openBtn = document.getElementById("ops-open-house-payout");
+    const openBtn = document.getElementById("ops-open-house-withdraw");
     const submitBtn = document.getElementById("ops-house-submit");
     const errorEl = document.getElementById("ops-house-error");
 
@@ -79,7 +79,7 @@
 
             submitBtn.disabled = true;
             try {
-                const res = await fetch("/ops/house-payout/", {
+                const res = await fetch("/ops/house-withdraw/", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/x-www-form-urlencoded",
@@ -90,7 +90,7 @@
                 const data = await res.json();
                 if (!data.success) {
                     if (errorEl) {
-                        errorEl.textContent = data.error || "Payout failed.";
+                        errorEl.textContent = data.error || "Withdrawal failed.";
                         errorEl.hidden = false;
                     }
                     return;

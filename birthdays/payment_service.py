@@ -193,11 +193,7 @@ def initiate_mpesa_payment(
     )
 
     if idempotency_key:
-        key = idempotency_key.strip()
-        PaymentAttempt.objects.update_or_create(
-            idempotency_key=key,
-            defaults={"payment": payment},
-        )
+        PaymentAttempt.objects.create(idempotency_key=idempotency_key.strip(), payment=payment)
         remember_idempotent_payment(idempotency_key, payment.pk)
 
     client = get_mpesa_client()
@@ -205,9 +201,9 @@ def initiate_mpesa_payment(
 
     try:
         stk = client.stk_push(phone_normalized, amount, payment.account_reference, desc)
-    except MpesaError as exc:
+    except MpesaError:
         payment.status = MpesaPayment.Status.FAILED
-        payment.result_desc = str(exc)[:255]
+        payment.result_desc = "STK Push failed to start."
         payment.save(update_fields=["status", "result_desc", "updated_at"])
         raise
 
