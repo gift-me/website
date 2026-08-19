@@ -23,7 +23,7 @@ from django.views.static import serve as media_serve
 from birthdays.auth_views import CustomSignupView
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('gift-admin/', admin.site.urls),
     path('ops/', include('ops.urls')),
     path('accounts/signup/', CustomSignupView.as_view(), name='account_signup'),
     path('accounts/', include('allauth.urls')),
