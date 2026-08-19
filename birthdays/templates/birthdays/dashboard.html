@@ -606,7 +606,7 @@
                     </div>
                     <div class="field">
                         <label for="withdraw-phone">M-Pesa number</label>
-                        <input id="withdraw-phone" name="payout_phone" type="tel" inputmode="numeric" pattern="07[0-9]{8}" maxlength="10" placeholder="0712345678" value="{% if profile.payout_phone|slice:':3' == '254' %}0{{ profile.payout_phone|slice:'3:' }}{% elif profile.payout_phone|slice:':3' == '+25' %}0{{ profile.payout_phone|slice:'4:' }}{% else %}{{ profile.payout_phone }}{% endif %}" required>
+                        <input id="withdraw-phone" name="payout_phone" type="tel" inputmode="numeric" maxlength="12" placeholder="0712345678" value="{% if profile.payout_phone|slice:':3' == '254' %}0{{ profile.payout_phone|slice:'3:' }}{% elif profile.payout_phone|slice:':3' == '+25' %}0{{ profile.payout_phone|slice:'4:' }}{% else %}{{ profile.payout_phone }}{% endif %}" required>
                     </div>
                 </div>
                 <div class="modal-actions">
