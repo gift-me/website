@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import mpesa_views, views, withdrawal_views
+from . import mpesa_views, payout_views, views
 from .auth_views import profile_setup
 
 urlpatterns = [
@@ -17,10 +17,10 @@ urlpatterns = [
     path("api/mpesa/stk-push/", mpesa_views.stk_push_initiate, name="mpesa-stk-push"),
     path("api/mpesa/callback/", mpesa_views.mpesa_callback, name="mpesa-callback"),
     path("api/mpesa/status/<int:payment_id>/", mpesa_views.payment_status, name="mpesa-payment-status"),
-    path("api/withdraw/initiate/", withdrawal_views.withdraw_initiate, name="withdraw-initiate"),
-    path("api/withdraw/verify/", withdrawal_views.withdraw_verify, name="withdraw-verify"),
-    path("api/withdraw/status/<int:withdrawal_id>/", withdrawal_views.withdraw_status, name="withdraw-status"),
-    path("api/mpesa/b2c/result/", withdrawal_views.b2c_result_callback, name="mpesa-b2c-result"),
-    path("api/mpesa/b2c/timeout/", withdrawal_views.b2c_timeout_callback, name="mpesa-b2c-timeout"),
+    path("api/payout/initiate/", payout_views.payout_initiate, name="payout-initiate"),
+    path("api/payout/verify/", payout_views.payout_verify, name="payout-verify"),
+    path("api/payout/status/<int:payout_id>/", payout_views.payout_status, name="payout-status"),
+    path("api/mpesa/b2c/result/", payout_views.b2c_result_callback, name="mpesa-b2c-result"),
+    path("api/mpesa/b2c/timeout/", payout_views.b2c_timeout_callback, name="mpesa-b2c-timeout"),
     path("create/", views.create_birthday_page, name="birthday-create"),
 ]

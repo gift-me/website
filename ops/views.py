@@ -10,15 +10,15 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 
-from birthdays.fees import calculate_mpesa_withdrawal_fee
-from birthdays.models import CatalogGift, HouseWithdrawal, MpesaPayment, SiteSettings, WithdrawalRequest
+from birthdays.fees import calculate_mpesa_payout_fee
+from birthdays.models import CatalogGift, MpesaPayment, Payout, SiteSettings
 from birthdays.safe_cache import cache_get, cache_incr, cache_set
 
 from .decorators import staff_required
 from .services import (
-    filter_house_withdrawals,
+    filter_house_payouts,
     filter_payments,
-    filter_user_withdrawals,
+    filter_user_payouts,
     gifts_last_7_days,
     overview_stats,
     payment_status_chart,
@@ -102,26 +102,26 @@ def ops_deposits(request):
 
 @require_GET
 @staff_required
-def ops_withdrawals(request):
+def ops_payouts(request):
     q = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
-    withdrawals = filter_user_withdrawals(q, status)[:200]
+    payouts = filter_user_payouts(q, status)[:200]
     return render(
         request,
-        "ops/withdrawals.html",
-        {**_ops_ctx(request, "withdrawals"), "withdrawals": withdrawals, "q": q, "status": status},
+        "ops/payouts.html",
+        {**_ops_ctx(request, "payouts"), "payouts": payouts, "q": q, "status": status},
     )
 
 
 @require_GET
 @staff_required
-def ops_house_withdrawals(request):
+def ops_house_payouts(request):
     q = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip()
-    rows = filter_house_withdrawals(q, status)[:200]
+    rows = filter_house_payouts(q, status)[:200]
     return render(
         request,
-        "ops/house_withdrawals.html",
+        "ops/house_payouts.html",
         {**_ops_ctx(request, "house"), "rows": rows, "q": q, "status": status},
     )
 
@@ -163,7 +163,7 @@ def ops_settings_save(request):
 
 @require_POST
 @staff_required
-def ops_house_withdraw(request):
+def ops_house_payout(request):
     from .services import available_house_profit
 
     amount_raw = request.POST.get("amount", "").strip()
@@ -181,15 +181,16 @@ def ops_house_withdraw(request):
     if not MPESA_PATTERN.match(phone):
         return JsonResponse({"success": False, "error": "Enter a valid M-Pesa number."}, status=400)
 
-    fee = calculate_mpesa_withdrawal_fee(amount)
-    HouseWithdrawal.objects.create(
+    fee = calculate_mpesa_payout_fee(amount)
+    Payout.objects.create(
+        kind=Payout.Kind.HOUSE,
         amount=amount,
         payout_phone=phone,
-        mpesa_withdrawal_fee=fee,
+        payout_fee=fee,
         created_by=request.user,
-        status=HouseWithdrawal.Status.PENDING,
+        status=Payout.Status.PENDING,
     )
-    return JsonResponse({"success": True, "message": "House withdrawal request recorded.", "fee": str(fee)})
+    return JsonResponse({"success": True, "message": "House payout request recorded.", "fee": str(fee)})
 
 
 @require_GET

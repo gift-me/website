@@ -64,11 +64,11 @@
 
             </button>
 
-            <button type="button" class="dash-btn dash-btn-primary" id="open-withdraw-modal" title="Withdraw funds">
+            <button type="button" class="dash-btn dash-btn-primary" id="open-payout-modal" title="Request payout">
 
                 <svg class="dash-svg dash-svg-light" aria-hidden="true"><use href="#icon-wallet"/></svg>
 
-                Withdraw
+                Payout
 
             </button>
 
@@ -160,7 +160,7 @@
 
                 <strong>KES {{ available_balance|floatformat:2 }}</strong>
 
-                <small>Ready to withdraw</small>
+                <small>Ready for payout</small>
 
             </div>
 
@@ -212,7 +212,7 @@
 
             <button class="dash-tab" data-tab-target="qrcode-tab">QR Code</button>
 
-            <button class="dash-tab" data-tab-target="withdrawals-tab">Withdrawals</button>
+            <button class="dash-tab" data-tab-target="payouts-tab">Payouts</button>
 
         </nav>
 
@@ -404,9 +404,9 @@
 
 
 
-        <div id="withdrawals-tab" class="dash-tab-panel">
+        <div id="payouts-tab" class="dash-tab-panel">
 
-            <h3>Withdrawal History</h3>
+            <h3>Payout History</h3>
 
             <div class="table-scroll">
 
@@ -416,7 +416,7 @@
 
                     <tbody>
 
-                        {% for w in withdrawals %}
+                        {% for w in payouts %}
 
                         <tr>
 
@@ -432,7 +432,7 @@
 
                         {% empty %}
 
-                        <tr><td colspan="4" class="empty">No withdrawals yet.</td></tr>
+                        <tr><td colspan="4" class="empty">No payouts yet.</td></tr>
 
                         {% endfor %}
 
@@ -584,63 +584,63 @@
 
 
 
-<div class="dash-modal" id="withdraw-modal" hidden>
+<div class="dash-modal" id="payout-modal" hidden>
 
-    <div class="dash-modal-backdrop" data-close-modal="withdraw-modal"></div>
+    <div class="dash-modal-backdrop" data-close-modal="payout-modal"></div>
 
     <div class="dash-modal-card dash-modal-scroll">
 
-        <button type="button" class="dash-modal-close" data-close-modal="withdraw-modal" aria-label="Close" title="Close">&times;</button>
+        <button type="button" class="dash-modal-close" data-close-modal="payout-modal" aria-label="Close" title="Close">&times;</button>
 
-        <h2 id="withdraw-modal-title">Withdraw</h2>
-        <p class="dash-modal-sub" id="withdraw-modal-sub">Minimum withdrawal KES 500. We’ll email a one-time code to <strong>{{ user.email }}</strong> before sending funds.</p>
-        <p class="dash-modal-error" id="withdraw-modal-error" hidden></p>
+        <h2 id="payout-modal-title">Payout</h2>
+        <p class="dash-modal-sub" id="payout-modal-sub">Minimum payout KES 500. We’ll email a one-time code to <strong>{{ user.email }}</strong> before sending funds.</p>
+        <p class="dash-modal-error" id="payout-modal-error" hidden></p>
 
-        <div id="withdraw-state-form">
-            <form id="withdraw-details-form" class="dash-modal-form">
+        <div id="payout-state-form">
+            <form id="payout-details-form" class="dash-modal-form">
                 {% csrf_token %}
                 <div class="modal-body-fields">
                     <div class="field">
-                        <label for="withdraw-amount">Amount (KES)</label>
-                        <input id="withdraw-amount" name="amount" type="number" min="500" max="{{ available_balance|floatformat:0 }}" step="1" placeholder="500" required>
+                        <label for="payout-amount">Amount (KES)</label>
+                        <input id="payout-amount" name="amount" type="number" min="500" max="{{ available_balance|floatformat:0 }}" step="1" placeholder="500" required>
                     </div>
                     <div class="field">
-                        <label for="withdraw-phone">M-Pesa number</label>
-                        <input id="withdraw-phone" name="payout_phone" type="tel" inputmode="numeric" pattern="07[0-9]{8}" maxlength="10" placeholder="0712345678" value="{% if profile.payout_phone|slice:':3' == '254' %}0{{ profile.payout_phone|slice:'3:' }}{% elif profile.payout_phone|slice:':3' == '+25' %}0{{ profile.payout_phone|slice:'4:' }}{% else %}{{ profile.payout_phone }}{% endif %}" required>
+                        <label for="payout-phone">M-Pesa number</label>
+                        <input id="payout-phone" name="payout_phone" type="tel" inputmode="numeric" pattern="07[0-9]{8}" maxlength="10" placeholder="0712345678" value="{% if profile.payout_phone|slice:':3' == '254' %}0{{ profile.payout_phone|slice:'3:' }}{% elif profile.payout_phone|slice:':3' == '+25' %}0{{ profile.payout_phone|slice:'4:' }}{% else %}{{ profile.payout_phone }}{% endif %}" required>
                     </div>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="dash-btn dash-btn-ghost" data-close-modal="withdraw-modal" title="Cancel">Cancel</button>
-                    <button type="submit" class="dash-btn dash-btn-primary modal-submit-btn" id="withdraw-send-code-btn" title="Send verification code">Send code</button>
+                    <button type="button" class="dash-btn dash-btn-ghost" data-close-modal="payout-modal" title="Cancel">Cancel</button>
+                    <button type="submit" class="dash-btn dash-btn-primary modal-submit-btn" id="payout-send-code-btn" title="Send verification code">Send code</button>
                 </div>
             </form>
         </div>
 
-        <div id="withdraw-state-verify" hidden>
-            <form id="withdraw-verify-form" class="dash-modal-form">
+        <div id="payout-state-verify" hidden>
+            <form id="payout-verify-form" class="dash-modal-form">
                 {% csrf_token %}
                 <div class="modal-body-fields">
                     <div class="field">
-                        <label for="withdraw-code">Email verification code</label>
-                        <input id="withdraw-code" name="code" class="auth-input withdraw-otp-input" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="••••••" autocomplete="one-time-code" required>
-                        <small class="field-hint" id="withdraw-verify-hint">Enter the 6-digit code sent to {{ user.email }}.</small>
+                        <label for="payout-code">Email verification code</label>
+                        <input id="payout-code" name="code" class="auth-input payout-otp-input" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="••••••" autocomplete="one-time-code" required>
+                        <small class="field-hint" id="payout-verify-hint">Enter the 6-digit code sent to {{ user.email }}.</small>
                     </div>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="dash-btn dash-btn-ghost" id="withdraw-back-btn" title="Back">Back</button>
-                    <button type="submit" class="dash-btn dash-btn-primary modal-submit-btn" id="withdraw-submit-btn" title="Confirm withdrawal">Confirm withdrawal</button>
+                    <button type="button" class="dash-btn dash-btn-ghost" id="payout-back-btn" title="Back">Back</button>
+                    <button type="submit" class="dash-btn dash-btn-primary modal-submit-btn" id="payout-submit-btn" title="Confirm payout">Confirm payout</button>
                 </div>
             </form>
         </div>
 
-        <div id="withdraw-state-loading" class="dash-modal-state" hidden>
-            <p>Processing your withdrawal with M-Pesa…</p>
+        <div id="payout-state-loading" class="dash-modal-state" hidden>
+            <p>Processing your payout with M-Pesa…</p>
         </div>
 
-        <div id="withdraw-state-success" class="dash-modal-state" hidden>
-            <p id="withdraw-success-message">Withdrawal submitted successfully.</p>
+        <div id="payout-state-success" class="dash-modal-state" hidden>
+            <p id="payout-success-message">Payout submitted successfully.</p>
             <div class="modal-actions">
-                <button type="button" class="dash-btn dash-btn-primary" data-close-modal="withdraw-modal" title="Close">Done</button>
+                <button type="button" class="dash-btn dash-btn-primary" data-close-modal="payout-modal" title="Close">Done</button>
             </div>
         </div>
 
@@ -653,7 +653,7 @@
 {% block scripts %}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="{% static 'js/withdraw-modal.js' %}"></script>
+<script src="{% static 'js/payout-modal.js' %}"></script>
 
 {% endblock %}
 

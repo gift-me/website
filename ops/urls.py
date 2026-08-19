@@ -11,9 +11,9 @@ urlpatterns = [
     path("gifts/", views.ops_gifts, name="ops-gifts"),
     path("gifts/save/", views.ops_gifts_save, name="ops-gifts-save"),
     path("gifts/delete/", views.ops_gifts_delete, name="ops-gifts-delete"),
-    path("withdrawals/", views.ops_withdrawals, name="ops-withdrawals"),
-    path("house-withdrawals/", views.ops_house_withdrawals, name="ops-house-withdrawals"),
-    path("house-withdraw/", views.ops_house_withdraw, name="ops-house-withdraw"),
+    path("payouts/", views.ops_payouts, name="ops-payouts"),
+    path("house-payouts/", views.ops_house_payouts, name="ops-house-payouts"),
+    path("house-payout/", views.ops_house_payout, name="ops-house-payout"),
     path("settings/", views.ops_settings, name="ops-settings"),
     path("settings/save/", views.ops_settings_save, name="ops-settings-save"),
 ]

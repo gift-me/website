@@ -39,13 +39,13 @@
                 <span class="ops-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M20 7h-3V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v2a9 9 0 0 0 9 9 9 9 0 0 0 9-9V8a1 1 0 0 0-1-1z" stroke="currentColor" stroke-width="1.8"/></svg></span>
                 <span class="ops-nav-label">Catalog gifts</span>
             </a>
-            <a href="{% url 'ops-withdrawals' %}" class="{% if ops_page == 'withdrawals' %}is-active{% endif %}" title="Withdrawals">
+            <a href="{% url 'ops-payouts' %}" class="{% if ops_page == 'payouts' %}is-active{% endif %}" title="Payouts">
                 <span class="ops-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21V9m0 0l4 4m-4-4l-4 4M4 5h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                <span class="ops-nav-label">Withdrawals</span>
+                <span class="ops-nav-label">Payouts</span>
             </a>
-            <a href="{% url 'ops-house-withdrawals' %}" class="{% if ops_page == 'house' %}is-active{% endif %}" title="House withdrawals">
+            <a href="{% url 'ops-house-payouts' %}" class="{% if ops_page == 'house' %}is-active{% endif %}" title="House payouts">
                 <span class="ops-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M3 21h18M5 21V9l7-4 7 4v12M9 21v-6h6v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-                <span class="ops-nav-label">House withdrawals</span>
+                <span class="ops-nav-label">House payouts</span>
             </a>
             <a href="{% url 'ops-settings' %}" class="{% if ops_page == 'settings' %}is-active{% endif %}" title="Site settings">
                 <span class="ops-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
@@ -76,7 +76,7 @@
             </div>
             <div class="ops-topbar-right">
                 <span class="ops-welcome">Welcome, {{ user.get_username }}</span>
-                <button type="button" class="ops-house-withdraw-btn" id="ops-open-house-withdraw" title="House profit withdrawal">
+                <button type="button" class="ops-house-payout-btn" id="ops-open-house-payout" title="House profit payout">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0l4-4m-4 4l-4-4M4 19h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 </button>
             </div>
@@ -94,12 +94,12 @@
         <div class="ops-modal-backdrop" data-close-house-modal></div>
         <div class="ops-modal-card">
             <button type="button" class="ops-modal-close" data-close-house-modal>&times;</button>
-            <h2>House profit withdrawal</h2>
+            <h2>House profit payout</h2>
             <p class="ops-modal-sub">Available: KES <span id="ops-house-available">{{ stats.available_house_profit|default:"0"|floatformat:0 }}</span></p>
             <p class="ops-modal-error" id="ops-house-error" hidden></p>
             <label>Amount (KES)<input type="number" id="ops-house-amount" min="1" step="1"></label>
             <label>M-Pesa phone<input type="tel" id="ops-house-phone" placeholder="0712345678"></label>
-            <button type="button" class="ops-btn-primary" id="ops-house-submit">Withdraw</button>
+            <button type="button" class="ops-btn-primary" id="ops-house-submit">Payout</button>
         </div>
     </div>
 

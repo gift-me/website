@@ -333,7 +333,7 @@ body.ops-body {
     height: 20px;
 }
 
-.ops-house-withdraw-btn {
+.ops-house-payout-btn {
     border: 0;
     background: rgba(230, 57, 70, 0.1);
     color: var(--ops-primary);
@@ -346,7 +346,7 @@ body.ops-body {
     justify-content: center;
 }
 
-.ops-house-withdraw-btn:hover {
+.ops-house-payout-btn:hover {
     background: rgba(230, 57, 70, 0.18);
 }
 

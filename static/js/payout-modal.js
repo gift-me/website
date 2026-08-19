@@ -1,19 +1,19 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const modal = document.getElementById("withdraw-modal");
+    const modal = document.getElementById("payout-modal");
     if (!modal) return;
 
-    const detailsForm = document.getElementById("withdraw-details-form");
-    const verifyForm = document.getElementById("withdraw-verify-form");
-    const stateForm = document.getElementById("withdraw-state-form");
-    const stateVerify = document.getElementById("withdraw-state-verify");
-    const stateLoading = document.getElementById("withdraw-state-loading");
-    const stateSuccess = document.getElementById("withdraw-state-success");
-    const errorEl = document.getElementById("withdraw-modal-error");
-    const verifyHint = document.getElementById("withdraw-verify-hint");
-    const successMessage = document.getElementById("withdraw-success-message");
-    const backBtn = document.getElementById("withdraw-back-btn");
-    const sendCodeBtn = document.getElementById("withdraw-send-code-btn");
-    const submitBtn = document.getElementById("withdraw-submit-btn");
+    const detailsForm = document.getElementById("payout-details-form");
+    const verifyForm = document.getElementById("payout-verify-form");
+    const stateForm = document.getElementById("payout-state-form");
+    const stateVerify = document.getElementById("payout-state-verify");
+    const stateLoading = document.getElementById("payout-state-loading");
+    const stateSuccess = document.getElementById("payout-state-success");
+    const errorEl = document.getElementById("payout-modal-error");
+    const verifyHint = document.getElementById("payout-verify-hint");
+    const successMessage = document.getElementById("payout-success-message");
+    const backBtn = document.getElementById("payout-back-btn");
+    const sendCodeBtn = document.getElementById("payout-send-code-btn");
+    const submitBtn = document.getElementById("payout-submit-btn");
 
     let authorizationId = null;
     let pollTimer = null;
@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
         showState("form");
         verifyForm?.reset();
         setBusy(sendCodeBtn, false, "Send code");
-        setBusy(submitBtn, false, "Confirm withdrawal");
+        setBusy(submitBtn, false, "Confirm payout");
     }
 
     function openModal() {
@@ -78,8 +78,8 @@ document.addEventListener("DOMContentLoaded", () => {
         resetModal();
     }
 
-    document.getElementById("open-withdraw-modal")?.addEventListener("click", openModal);
-    modal.querySelectorAll('[data-close-modal="withdraw-modal"]').forEach((el) => {
+    document.getElementById("open-payout-modal")?.addEventListener("click", openModal);
+    modal.querySelectorAll('[data-close-modal="payout-modal"]').forEach((el) => {
         el.addEventListener("click", closeModal);
     });
     document.addEventListener("keydown", (e) => {
@@ -91,11 +91,11 @@ document.addEventListener("DOMContentLoaded", () => {
         showState("form");
     });
 
-    async function pollWithdrawalStatus(withdrawalId) {
+    async function pollPayoutStatus(payoutId) {
         stopPolling();
         pollTimer = window.setInterval(async () => {
             try {
-                const response = await fetch(`/api/withdraw/status/${withdrawalId}/`, {
+                const response = await fetch(`/api/payout/status/${payoutId}/`, {
                     headers: { Accept: "application/json" },
                 });
                 const data = await response.json();
@@ -105,14 +105,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     stopPolling();
                     if (successMessage) {
                         successMessage.textContent =
-                            data.result_desc || "Withdrawal completed. Funds sent to your M-Pesa.";
+                            data.result_desc || "Payout completed. Funds sent to your M-Pesa.";
                     }
                     showState("success");
                     window.setTimeout(() => window.location.reload(), 1800);
                 } else if (data.status === "failed" || data.status === "rejected") {
                     stopPolling();
                     showState("verify");
-                    showError(data.result_desc || "Withdrawal failed. Try again.");
+                    showError(data.result_desc || "Payout failed. Try again.");
                 }
             } catch (error) {
                 /* keep polling */
@@ -132,7 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         try {
-            const response = await fetch("/api/withdraw/initiate/", {
+            const response = await fetch("/api/payout/initiate/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -150,7 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 verifyHint.textContent = data.message || "Enter the code sent to your email.";
             }
             showState("verify");
-            document.getElementById("withdraw-code")?.focus();
+            document.getElementById("payout-code")?.focus();
         } catch (error) {
             showError(error.message || "Could not send verification code.");
         } finally {
@@ -163,7 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
         showError("");
 
         if (!authorizationId) {
-            showError("Start the withdrawal again.");
+            showError("Start the payout again.");
             showState("form");
             return;
         }
@@ -178,7 +178,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         try {
-            const response = await fetch("/api/withdraw/verify/", {
+            const response = await fetch("/api/payout/verify/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -188,12 +188,12 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             const data = await response.json();
             if (!response.ok || !data.success) {
-                throw new Error(data.error || "Withdrawal could not be processed.");
+                throw new Error(data.error || "Payout could not be processed.");
             }
 
             if (successMessage) {
                 successMessage.textContent =
-                    data.message || "Withdrawal submitted. M-Pesa is processing your payout.";
+                    data.message || "Payout submitted. M-Pesa is processing your transfer.";
             }
 
             if (data.status === "approved") {
@@ -201,13 +201,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 window.setTimeout(() => window.location.reload(), 1800);
             } else {
                 showState("loading");
-                pollWithdrawalStatus(data.withdrawal_id);
+                pollPayoutStatus(data.payout_id);
             }
         } catch (error) {
             showState("verify");
-            showError(error.message || "Withdrawal could not be processed.");
+            showError(error.message || "Payout could not be processed.");
         } finally {
-            setBusy(submitBtn, false, "Confirm withdrawal");
+            setBusy(submitBtn, false, "Confirm payout");
         }
     });
 });

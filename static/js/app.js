@@ -568,8 +568,8 @@ function initWishlistModal() {
     updateAddButton();
 }
 
-function initWithdrawModal() {
-    /* handled by withdraw-modal.js on dashboard */
+function initPayoutModal() {
+    /* handled by payout-modal.js on dashboard */
 }
 
 function initProfileNoticeDismiss() {
@@ -599,7 +599,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initCopyLink();
     initCopyButtons();
     initWishlistModal();
-    initWithdrawModal();
+    initPayoutModal();
     initProfileNoticeDismiss();
     initGiftDetailModal();
     initWhatsAppShare();

@@ -7,6 +7,7 @@ Sandbox docs: https://developer.safaricom.co.ke/APIs/MpesaExpressSimulate
 import base64
 import json
 import logging
+import uuid
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from urllib.parse import urlparse
@@ -73,6 +74,7 @@ def parse_b2c_result(body):
         "transaction_id": result.get("TransactionID", "") or parameters.get("TransactionReceipt", ""),
         "amount": parameters.get("TransactionAmount"),
         "receiver_party": parameters.get("ReceiverPartyPublicName"),
+        "occasion": parameters.get("Occasion", ""),
     }
 
 
@@ -162,7 +164,7 @@ class MpesaClient:
         }
 
     def get_access_token(self):
-        from .safe_cache import cache_get, cache_set
+        from .safe_cache import cache_delete, cache_get, cache_set
 
         cached = cache_get("daraja:oauth_token")
         if cached:
@@ -184,6 +186,7 @@ class MpesaClient:
             raise MpesaError("Invalid OAuth response from Daraja.", response.text) from exc
 
         if response.status_code != 200 or "access_token" not in data:
+            cache_delete("daraja:oauth_token")
             logger.debug("[MPESA_OAUTH_ERROR] status=%s data=%s", response.status_code, data)
             raise MpesaError(
                 data.get("errorMessage") or data.get("error") or "Failed to obtain M-Pesa access token.",
@@ -211,11 +214,12 @@ class MpesaClient:
         amount = _parse_whole_kes_amount(amount)
         phone = normalize_phone(phone)
         logger.debug(
-            f"[MPESA_STK_REQUEST] \
-            callback_url={self.callback_url} \
-            shortcode={self.shortcode} \
-            phone={phone} \
-            amount={amount}",
+            "[MPESA_STK_REQUEST] callback=%s shortcode=%s till=%s phone=%s amount=%s",
+            self.callback_url,
+            self.shortcode,
+            self.till,
+            phone,
+            amount,
         )
         access_token = self.get_access_token()
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -264,27 +268,46 @@ class MpesaClient:
 
         return data
 
-    def b2c_payment(self, phone, amount, remarks="GiftMe withdrawal", occasion="Withdrawal"):
-        """Initiate B2C payment to a customer's M-Pesa number."""
+    @staticmethod
+    def _b2c_error_message(data):
+        return (
+            data.get("errorMessage")
+            or data.get("error")
+            or data.get("ResponseDescription")
+            or "B2C payment request failed."
+        )
+
+    def b2c_payment(
+        self,
+        phone,
+        amount,
+        remarks="GiftMe payout",
+        occasion="Payout",
+        originator_conversation_id="",
+    ):
+        """Initiate B2C payment to a customer's M-Pesa number (Daraja B2C v3)."""
         if not self.b2c_initiator or not self.b2c_security_credential:
             raise MpesaError(
-                "MPESA_B2C_INITIATOR_NAME and MPESA_B2C_SECURITY_CREDENTIAL are required for withdrawals."
+                "MPESA_B2C_INITIATOR_NAME and MPESA_B2C_SECURITY_CREDENTIAL are required for payouts."
             )
         if not self.b2c_shortcode:
-            raise MpesaError("MPESA_B2C_SHORTCODE is required for withdrawals.")
+            raise MpesaError("MPESA_B2C_SHORTCODE is required for payouts.")
 
         amount = _parse_whole_kes_amount(amount)
         phone = normalize_phone(phone)
+        originator_id = (originator_conversation_id or "").strip() or str(uuid.uuid4())
         logger.debug(
-            "[MPESA_B2C_REQUEST] shortcode=%s phone=%s amount=%s",
+            "[MPESA_B2C_REQUEST] shortcode=%s phone=%s amount=%s originator=%s",
             self.b2c_shortcode,
             phone,
             amount,
+            originator_id,
         )
 
-        access_token = self.get_access_token()
-        url = f"{self.base_url}/mpesa/b2c/v1/paymentrequest"
+        # Production Daraja B2C uses v3 and requires a client-generated OriginatorConversationID.
+        url = f"{self.base_url}/mpesa/b2c/v3/paymentrequest"
         payload = {
+            "OriginatorConversationID": originator_id,
             "InitiatorName": self.b2c_initiator,
             "SecurityCredential": self.b2c_security_credential,
             "CommandID": self.b2c_command_id,
@@ -297,32 +320,99 @@ class MpesaClient:
             "Occasion": f"{occasion}"[:100],
         }
 
+        access_token = self.get_access_token()
         response = requests.post(
             url,
             json=payload,
             headers=self._headers(access_token),
             timeout=30,
         )
-
         try:
             data = response.json()
         except json.JSONDecodeError as exc:
             raise MpesaError("Invalid B2C response from Daraja.", response.text) from exc
 
+        print(f"[MPESA_B2C_RESPONSE] status={response.status_code} data={data}")
+
         if response.status_code != 200:
             logger.debug("[MPESA_B2C_HTTP_ERROR] status=%s data=%s", response.status_code, data)
-            raise MpesaError(
-                data.get("errorMessage") or data.get("error") or "B2C payment request failed.",
-                data,
-            )
+            raise MpesaError(self._b2c_error_message(data), data)
 
         if f"{data.get('ResponseCode', '')}" != "0":
-            logger.debug("[MPESA_B2C_REJECTED] %s", data)
+            logger.debug("[MPESA_B2C_REJECTED] data=%s", data)
             raise MpesaError(
-                data.get("ResponseDescription") or "B2C payment rejected.",
+                data.get("ResponseDescription") or self._b2c_error_message(data),
                 data,
             )
 
+        # Ensure callers can persist the ID we sent when Daraja echoes a different shape.
+        data.setdefault("OriginatorConversationID", originator_id)
+        return data
+
+    def transaction_status_query(
+        self,
+        transaction_id="",
+        originator_conversation_id="",
+        occasion="StatusQuery",
+        remarks="GiftMe payout status",
+    ):
+        """
+        Ask Daraja for the status of a prior B2C (or other) transaction.
+
+        Result is delivered asynchronously to ResultURL / QueueTimeOutURL —
+        the same B2C callbacks that mark payouts APPROVED or FAILED.
+        Prefer TransactionID when known; otherwise OriginatorConversationID.
+        """
+        if not self.b2c_initiator or not self.b2c_security_credential:
+            raise MpesaError(
+                "MPESA_B2C_INITIATOR_NAME and MPESA_B2C_SECURITY_CREDENTIAL are required."
+            )
+        if not self.b2c_shortcode:
+            raise MpesaError("MPESA_B2C_SHORTCODE is required.")
+        if not transaction_id and not originator_conversation_id:
+            raise MpesaError("TransactionID or OriginatorConversationID is required.")
+
+        access_token = self.get_access_token()
+        url = f"{self.base_url}/mpesa/transactionstatus/v1/query"
+        payload = {
+            "Initiator": self.b2c_initiator,
+            "SecurityCredential": self.b2c_security_credential,
+            "CommandID": "TransactionStatusQuery",
+            "TransactionID": transaction_id or "",
+            "OriginatorConversationID": originator_conversation_id or "",
+            "PartyA": self.b2c_shortcode,
+            "IdentifierType": "4",
+            "ResultURL": self.b2c_result_url,
+            "QueueTimeOutURL": self.b2c_timeout_url,
+            "Remarks": f"{remarks}"[:100],
+            "Occasion": f"{occasion}"[:100],
+        }
+        # Daraja rejects empty optional keys on some environments
+        if not payload["TransactionID"]:
+            del payload["TransactionID"]
+        if not payload["OriginatorConversationID"]:
+            del payload["OriginatorConversationID"]
+
+        response = requests.post(
+            url,
+            json=payload,
+            headers=self._headers(access_token),
+            timeout=30,
+        )
+        try:
+            data = response.json()
+        except json.JSONDecodeError as exc:
+            raise MpesaError("Invalid Transaction Status response from Daraja.", response.text) from exc
+
+        if response.status_code != 200 or f"{data.get('ResponseCode', '')}" != "0":
+            logger.debug("[MPESA_TX_STATUS_FAILED] %s", data)
+            raise MpesaError(
+                data.get("errorMessage")
+                or data.get("error")
+                or data.get("ResponseDescription")
+                or "Transaction status query failed.",
+                data,
+            )
         return data
 
     def stk_query(self, checkout_request_id):

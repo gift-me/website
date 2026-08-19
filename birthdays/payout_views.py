@@ -1,20 +1,23 @@
 import json
 import logging
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
 from .exceptions import MpesaError
-from .models import UserProfile, WithdrawalRequest
-from .mpesa import MpesaClient
-from .withdrawal_service import (
-    initiate_withdrawal_authorization,
-    mark_withdrawal_completed,
-    mark_withdrawal_failed,
+from .models import Payout, UserProfile
+from .mpesa import MpesaClient, get_mpesa_client
+from .safe_cache import cache_get, cache_set
+from .payout_service import (
+    find_payout_for_b2c_callback,
+    initiate_payout_authorization,
+    mark_payout_completed,
+    mark_payout_failed,
+    payout_status_payload,
     verify_and_disburse,
-    withdrawal_status_payload,
 )
 
 logger = logging.getLogger(__name__)
@@ -31,7 +34,7 @@ def _profile_for_request(request):
 
 @login_required
 @require_POST
-def withdraw_initiate(request):
+def payout_initiate(request):
     try:
         payload = json.loads(request.body or "{}")
     except json.JSONDecodeError:
@@ -39,7 +42,7 @@ def withdraw_initiate(request):
 
     profile = _profile_for_request(request)
     try:
-        authorization = initiate_withdrawal_authorization(
+        authorization = initiate_payout_authorization(
             profile=profile,
             amount_raw=payload.get("amount"),
             payout_phone_raw=payload.get("payout_phone"),
@@ -59,7 +62,7 @@ def withdraw_initiate(request):
 
 @login_required
 @require_POST
-def withdraw_verify(request):
+def payout_verify(request):
     try:
         payload = json.loads(request.body or "{}")
     except json.JSONDecodeError:
@@ -67,7 +70,7 @@ def withdraw_verify(request):
 
     profile = _profile_for_request(request)
     try:
-        withdrawal = verify_and_disburse(
+        payout = verify_and_disburse(
             profile=profile,
             authorization_id=payload.get("authorization_id"),
             code_raw=payload.get("code"),
@@ -78,50 +81,69 @@ def withdraw_verify(request):
     return JsonResponse(
         {
             "success": True,
-            "message": "Withdrawal submitted. M-Pesa is processing your payout.",
-            **withdrawal_status_payload(withdrawal),
+            "message": "Payout submitted. M-Pesa is processing your transfer.",
+            **payout_status_payload(payout),
         }
     )
 
 
 @login_required
 @require_GET
-def withdraw_status(request, withdrawal_id):
+def payout_status(request, payout_id):
     profile = _profile_for_request(request)
-    withdrawal = WithdrawalRequest.objects.filter(pk=withdrawal_id, profile=profile).first()
-    if not withdrawal:
-        return _json_error("Withdrawal not found.", 404)
+    payout = Payout.objects.filter(
+        pk=payout_id, profile=profile, kind=Payout.Kind.USER
+    ).first()
+    if not payout:
+        return _json_error("Payout not found.", 404)
 
-    return JsonResponse({"success": True, **withdrawal_status_payload(withdrawal)})
+    # Late-callback recovery: ask Daraja for status; result still lands on ResultURL.
+    if payout.status == Payout.Status.PROCESSING and (
+        payout.mpesa_transaction_id or payout.originator_conversation_id
+    ):
+        min_age = getattr(settings, "B2C_QUERY_MIN_AGE_SECONDS", 45)
+        throttle_key = f"mpesa_b2c_query_last:{payout.pk}"
+        if not cache_get(throttle_key):
+            from datetime import timedelta
+
+            from django.utils import timezone
+
+            if timezone.now() - payout.created_at >= timedelta(seconds=min_age):
+                try:
+                    get_mpesa_client().transaction_status_query(
+                        transaction_id=payout.mpesa_transaction_id,
+                        originator_conversation_id=payout.originator_conversation_id,
+                        occasion=f"payout:{payout.pk}",
+                    )
+                except MpesaError:
+                    logger.exception("B2C status query failed for payout %s", payout.pk)
+                cache_set(throttle_key, 1, timeout=30)
+        payout.refresh_from_db()
+
+    return JsonResponse({"success": True, **payout_status_payload(payout)})
 
 
 def _handle_b2c_callback(body):
     parsed = MpesaClient.parse_b2c_result(body)
-    originator_id = parsed.get("originator_conversation_id")
-    conversation_id = parsed.get("conversation_id")
+    payout = find_payout_for_b2c_callback(parsed)
 
-    withdrawal = None
-    if originator_id:
-        withdrawal = WithdrawalRequest.objects.filter(originator_conversation_id=originator_id).first()
-    if not withdrawal and conversation_id:
-        withdrawal = WithdrawalRequest.objects.filter(conversation_id=conversation_id).first()
-
-    if not withdrawal:
+    if not payout:
         logger.warning(
-            "B2C callback for unknown conversation: originator=%s conversation=%s",
-            originator_id,
-            conversation_id,
+            "B2C callback for unknown conversation: originator=%s conversation=%s occasion=%s",
+            parsed.get("originator_conversation_id"),
+            parsed.get("conversation_id"),
+            parsed.get("occasion"),
         )
         return
 
     if parsed.get("success"):
-        mark_withdrawal_completed(
-            withdrawal,
+        mark_payout_completed(
+            payout,
             transaction_id=parsed.get("transaction_id", ""),
-            result_desc=parsed.get("result_desc", "Withdrawal completed."),
+            result_desc=parsed.get("result_desc", "Payout completed."),
         )
     else:
-        mark_withdrawal_failed(withdrawal, parsed.get("result_desc", "Withdrawal failed."))
+        mark_payout_failed(payout, parsed.get("result_desc", "Payout failed."))
 
 
 @csrf_exempt
@@ -147,18 +169,11 @@ def b2c_timeout_callback(request):
         return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
 
     parsed = MpesaClient.parse_b2c_result(body)
-    originator_id = parsed.get("originator_conversation_id")
-    conversation_id = parsed.get("conversation_id")
+    payout = find_payout_for_b2c_callback(parsed)
 
-    withdrawal = None
-    if originator_id:
-        withdrawal = WithdrawalRequest.objects.filter(originator_conversation_id=originator_id).first()
-    if not withdrawal and conversation_id:
-        withdrawal = WithdrawalRequest.objects.filter(conversation_id=conversation_id).first()
-
-    if withdrawal and withdrawal.status == WithdrawalRequest.Status.PROCESSING:
-        mark_withdrawal_failed(
-            withdrawal,
+    if payout and payout.status == Payout.Status.PROCESSING:
+        mark_payout_failed(
+            payout,
             parsed.get("result_desc") or "M-Pesa queue timeout. Check your phone or try again.",
         )
 

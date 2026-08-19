@@ -237,7 +237,7 @@ MPESA_PASSKEY = os.environ.get("MPESA_PASSKEY", "")
 MPESA_CALLBACK_URL = os.environ.get("MPESA_CALLBACK_URL", "")
 MPESA_TRANSACTION_TYPE = os.environ.get("MPESA_TRANSACTION_TYPE", "CustomerBuyGoodsOnline")
 
-# M-Pesa B2C (withdrawals)
+# M-Pesa B2C (payouts)
 MPESA_B2C_SHORTCODE = os.environ.get("MPESA_B2C_SHORTCODE", "")
 MPESA_B2C_INITIATOR_NAME = os.environ.get("MPESA_B2C_INITIATOR_NAME", "")
 MPESA_B2C_SECURITY_CREDENTIAL = os.environ.get("MPESA_B2C_SECURITY_CREDENTIAL", "")
@@ -245,10 +245,13 @@ MPESA_B2C_COMMAND_ID = os.environ.get("MPESA_B2C_COMMAND_ID", "BusinessPayment")
 MPESA_B2C_RESULT_URL = os.environ.get("MPESA_B2C_RESULT_URL", "")
 MPESA_B2C_TIMEOUT_URL = os.environ.get("MPESA_B2C_TIMEOUT_URL", "")
 
-WITHDRAWAL_MIN_AMOUNT = 500
-WITHDRAWAL_OTP_EXPIRY_MINUTES = int(os.environ.get("WITHDRAWAL_OTP_EXPIRY_MINUTES", "10"))
+PAYOUT_MIN_AMOUNT = int(os.environ.get("PAYOUT_MIN_AMOUNT", os.environ.get("WITHDRAWAL_MIN_AMOUNT", "500")))
+PAYOUT_OTP_EXPIRY_MINUTES = int(
+    os.environ.get("PAYOUT_OTP_EXPIRY_MINUTES", os.environ.get("WITHDRAWAL_OTP_EXPIRY_MINUTES", "10"))
+)
+B2C_QUERY_MIN_AGE_SECONDS = int(os.environ.get("B2C_QUERY_MIN_AGE_SECONDS", "45"))
 
-# Email (verification, password reset, withdrawal OTP)
+# Email (verification, password reset, payout OTP)
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")

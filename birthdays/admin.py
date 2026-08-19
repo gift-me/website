@@ -5,15 +5,14 @@ from .models import (
     CatalogGift,
     GiftContribution,
     GiftOption,
-    HouseWithdrawal,
     MpesaPayment,
     PaymentAttempt,
+    Payout,
+    PayoutAuthorization,
     SiteSettings,
     UserGiftReceived,
     UserProfile,
     WishlistItem,
-    WithdrawalAuthorization,
-    WithdrawalRequest,
 )
 
 
@@ -98,19 +97,20 @@ class GiftContributionAdmin(admin.ModelAdmin):
     raw_id_fields = ("page", "option")
 
 
-@admin.register(WithdrawalRequest)
-class WithdrawalRequestAdmin(admin.ModelAdmin):
+@admin.register(Payout)
+class PayoutAdmin(admin.ModelAdmin):
     list_display = (
+        "kind",
         "profile",
         "page",
         "amount",
-        "mpesa_withdrawal_fee",
+        "payout_fee",
         "status",
         "payout_phone",
         "mpesa_transaction_id",
         "created_at",
     )
-    list_filter = ("status", "created_at")
+    list_filter = ("kind", "status", "created_at")
     search_fields = (
         "profile__username",
         "profile__user__email",
@@ -123,11 +123,11 @@ class WithdrawalRequestAdmin(admin.ModelAdmin):
     )
     readonly_fields = ("created_at", "processed_at")
     date_hierarchy = "created_at"
-    raw_id_fields = ("profile", "page")
+    raw_id_fields = ("profile", "page", "created_by")
 
 
-@admin.register(WithdrawalAuthorization)
-class WithdrawalAuthorizationAdmin(admin.ModelAdmin):
+@admin.register(PayoutAuthorization)
+class PayoutAuthorizationAdmin(admin.ModelAdmin):
     list_display = ("profile", "amount", "payout_phone", "expires_at", "verified_at", "created_at")
     list_filter = ("verified_at", "created_at")
     search_fields = ("profile__user__email", "payout_phone")
@@ -175,15 +175,6 @@ class UserGiftReceivedAdmin(admin.ModelAdmin):
     )
     date_hierarchy = "created_at"
     raw_id_fields = ("profile", "catalog_gift", "wishlist_item", "payment")
-
-
-@admin.register(HouseWithdrawal)
-class HouseWithdrawalAdmin(admin.ModelAdmin):
-    list_display = ("amount", "mpesa_withdrawal_fee", "payout_phone", "status", "created_by", "created_at")
-    list_filter = ("status", "created_at")
-    search_fields = ("payout_phone", "note", "created_by__email")
-    date_hierarchy = "created_at"
-    raw_id_fields = ("created_by",)
 
 
 @admin.register(SiteSettings)

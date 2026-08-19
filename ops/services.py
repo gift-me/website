@@ -9,7 +9,7 @@ from django.db.models import Count, Sum
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 
-from birthdays.models import HouseWithdrawal, MpesaPayment, UserProfile, WithdrawalRequest
+from birthdays.models import MpesaPayment, Payout
 
 User = get_user_model()
 
@@ -30,51 +30,49 @@ def total_mpesa_deposit_fees():
     return _completed_payments().aggregate(total=Sum("mpesa_deposit_fee"))["total"] or Decimal("0")
 
 
-def total_user_withdrawals():
-    approved = WithdrawalRequest.objects.filter(status=WithdrawalRequest.Status.APPROVED)
+def total_user_payouts():
+    approved = Payout.objects.filter(kind=Payout.Kind.USER, status=Payout.Status.APPROVED)
     gross = approved.aggregate(total=Sum("amount"))["total"] or Decimal("0")
-    fees = approved.aggregate(total=Sum("mpesa_withdrawal_fee"))["total"] or Decimal("0")
+    fees = approved.aggregate(total=Sum("payout_fee"))["total"] or Decimal("0")
     return gross, fees
 
 
-def total_house_withdrawals():
-    approved = HouseWithdrawal.objects.filter(status=HouseWithdrawal.Status.APPROVED)
+def total_house_payouts():
+    approved = Payout.objects.filter(kind=Payout.Kind.HOUSE, status=Payout.Status.APPROVED)
     gross = approved.aggregate(total=Sum("amount"))["total"] or Decimal("0")
-    fees = approved.aggregate(total=Sum("mpesa_withdrawal_fee"))["total"] or Decimal("0")
+    fees = approved.aggregate(total=Sum("payout_fee"))["total"] or Decimal("0")
     return gross, fees
 
 
 def available_house_profit():
-    approved_house = HouseWithdrawal.objects.filter(status=HouseWithdrawal.Status.APPROVED).aggregate(
-        total=Sum("amount")
-    )["total"] or Decimal("0")
-    pending_house = HouseWithdrawal.objects.filter(status=HouseWithdrawal.Status.PENDING).aggregate(
-        total=Sum("amount")
-    )["total"] or Decimal("0")
-    return total_house_profit() - approved_house - pending_house
+    held = Payout.objects.filter(
+        kind=Payout.Kind.HOUSE,
+        status__in=[Payout.Status.PENDING, Payout.Status.PROCESSING, Payout.Status.APPROVED],
+    ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
+    return total_house_profit() - held
 
 
 def estimated_mpesa_balance():
     deposits = total_deposits_gross()
     deposit_fees = total_mpesa_deposit_fees()
-    user_gross, user_fees = total_user_withdrawals()
-    house_gross, house_fees = total_house_withdrawals()
+    user_gross, user_fees = total_user_payouts()
+    house_gross, house_fees = total_house_payouts()
     return deposits - deposit_fees - user_gross - user_fees - house_gross - house_fees
 
 
 def overview_stats():
-    user_gross, user_fees = total_user_withdrawals()
-    house_gross, house_fees = total_house_withdrawals()
+    user_gross, user_fees = total_user_payouts()
+    house_gross, house_fees = total_house_payouts()
     return {
         "total_users": User.objects.count(),
         "total_deposits": total_deposits_gross(),
         "total_payments": _completed_payments().count(),
         "house_profit": total_house_profit(),
         "available_house_profit": available_house_profit(),
-        "user_withdrawals_gross": user_gross,
-        "user_withdrawal_fees": user_fees,
-        "house_withdrawals_gross": house_gross,
-        "house_withdrawal_fees": house_fees,
+        "user_payouts_gross": user_gross,
+        "user_payout_fees": user_fees,
+        "house_payouts_gross": house_gross,
+        "house_payout_fees": house_fees,
         "mpesa_deposit_fees": total_mpesa_deposit_fees(),
         "estimated_mpesa_balance": estimated_mpesa_balance(),
     }
@@ -155,8 +153,12 @@ def filter_payments(q="", status=""):
     return qs
 
 
-def filter_user_withdrawals(q="", status=""):
-    qs = WithdrawalRequest.objects.select_related("profile", "profile__user").order_by("-created_at")
+def filter_user_payouts(q="", status=""):
+    qs = (
+        Payout.objects.filter(kind=Payout.Kind.USER)
+        .select_related("profile", "profile__user")
+        .order_by("-created_at")
+    )
     if status:
         qs = qs.filter(status=status)
     if q:
@@ -168,8 +170,12 @@ def filter_user_withdrawals(q="", status=""):
     return qs
 
 
-def filter_house_withdrawals(q="", status=""):
-    qs = HouseWithdrawal.objects.select_related("created_by").order_by("-created_at")
+def filter_house_payouts(q="", status=""):
+    qs = (
+        Payout.objects.filter(kind=Payout.Kind.HOUSE)
+        .select_related("created_by")
+        .order_by("-created_at")
+    )
     if status:
         qs = qs.filter(status=status)
     if q:
